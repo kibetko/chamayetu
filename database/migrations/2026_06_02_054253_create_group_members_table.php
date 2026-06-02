@@ -12,9 +12,34 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('group_members', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+    $table->id();
+
+    $table->foreignId('group_id')
+          ->constrained()
+          ->cascadeOnDelete();
+
+    $table->foreignId('user_id')
+          ->constrained()
+          ->cascadeOnDelete();
+
+    $table->enum('role', [
+        'chairperson',
+        'treasurer',
+        'secretary',
+        'member'
+    ])->default('member');
+
+    $table->enum('status', [
+        'active',
+        'inactive'
+    ])->default('active');
+
+    $table->timestamp('joined_at')->nullable();
+
+    $table->timestamps();
+
+    $table->unique(['group_id', 'user_id']);
+});
     }
 
     /**

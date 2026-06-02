@@ -12,9 +12,31 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('contributions', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+    $table->id();
+
+    $table->foreignId('group_id')
+          ->constrained()
+          ->cascadeOnDelete();
+
+    $table->foreignId('user_id')
+          ->constrained()
+          ->cascadeOnDelete();
+
+    $table->decimal('amount', 12, 2);
+
+    $table->integer('month');
+
+    $table->integer('year');
+
+    $table->enum('status', [
+        'paid',
+        'pending'
+    ])->default('pending');
+
+    $table->timestamp('paid_at')->nullable();
+
+    $table->timestamps();
+});
     }
 
     /**

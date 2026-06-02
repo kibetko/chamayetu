@@ -12,9 +12,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('groups', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+    $table->id();
+
+    $table->string('name');
+
+    $table->string('unique_code')->unique();
+
+    $table->string('group_password');
+
+    $table->text('description')->nullable();
+
+    $table->foreignId('created_by')
+          ->constrained('users')
+          ->cascadeOnDelete();
+
+    $table->boolean('active')->default(true);
+
+    $table->timestamps();
+});
     }
 
     /**

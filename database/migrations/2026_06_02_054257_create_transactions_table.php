@@ -12,9 +12,33 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('transactions', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+    $table->id();
+
+    $table->foreignId('group_id')
+          ->constrained()
+          ->cascadeOnDelete();
+
+    $table->foreignId('user_id')
+          ->nullable()
+          ->constrained()
+          ->nullOnDelete();
+
+    $table->enum('type', [
+        'contribution',
+        'loan_disbursement',
+        'loan_repayment',
+        'penalty',
+        'withdrawal'
+    ]);
+
+    $table->decimal('amount', 12, 2);
+
+    $table->string('reference')->nullable();
+
+    $table->text('description')->nullable();
+
+    $table->timestamps();
+});
     }
 
     /**

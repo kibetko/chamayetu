@@ -12,9 +12,27 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('loan_approvals', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+    $table->id();
+
+    $table->foreignId('loan_id')
+          ->constrained()
+          ->cascadeOnDelete();
+
+    $table->foreignId('approved_by')
+          ->constrained('users')
+          ->cascadeOnDelete();
+
+    $table->enum('decision', [
+        'approved',
+        'rejected'
+    ]);
+
+    $table->text('comment')->nullable();
+
+    $table->timestamp('approved_at')->nullable();
+
+    $table->timestamps();
+});
     }
 
     /**
