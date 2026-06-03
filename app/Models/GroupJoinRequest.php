@@ -5,17 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class GroupMember extends Model
+class GroupJoinRequest extends Model
 {
-
     use HasFactory;
-    protected $fillable = [
-        'group_id',
-        'user_id',
-        'role',
-        'status',
-        'joined_at'
-    ];
+
+    protected $guarded = [];
 
     public function group()
     {
@@ -25,5 +19,10 @@ class GroupMember extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 }

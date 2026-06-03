@@ -5,22 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class GroupMember extends Model
+class Notification extends Model
 {
-
     use HasFactory;
-    protected $fillable = [
-        'group_id',
-        'user_id',
-        'role',
-        'status',
-        'joined_at'
-    ];
 
-    public function group()
-    {
-        return $this->belongsTo(Group::class);
-    }
+    protected $fillable = [
+        'user_id',
+        'title',
+        'message',
+        'type',
+        'action_url',
+        'is_read',
+        'read_at'
+    ];
 
     public function user()
     {

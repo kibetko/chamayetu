@@ -5,25 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class GroupMember extends Model
+class GroupInvitation extends Model
 {
-
     use HasFactory;
-    protected $fillable = [
-        'group_id',
-        'user_id',
-        'role',
-        'status',
-        'joined_at'
-    ];
+
+    protected $guarded = [];
 
     public function group()
     {
         return $this->belongsTo(Group::class);
     }
 
-    public function user()
+    public function inviter()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'invited_by');
     }
 }

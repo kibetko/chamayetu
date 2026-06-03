@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('group_settings', function (Blueprint $table) {
+
     $table->id();
 
     $table->foreignId('group_id')
@@ -35,12 +36,19 @@ return new class extends Migration
 
     $table->integer('maximum_loan_multiplier')->default(3);
 
+    $table->boolean('allow_join_requests')
+          ->default(true);
+
+    $table->boolean('require_approval')
+          ->default(true);
+
     $table->foreignId('updated_by')
           ->nullable()
           ->constrained('users')
           ->nullOnDelete();
 
     $table->timestamps();
+
 });
     }
 
