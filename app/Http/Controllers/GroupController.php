@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\Group;
 use App\Models\GroupMember;
 use App\Models\GroupSetting;
@@ -15,6 +16,22 @@ class GroupController extends Controller
     {
         return view('groups.create');
     }
+    public function switch(Group $group)
+{
+    $belongs = auth()
+        ->user()
+        ->groups()
+        ->where('groups.id', $group->id)
+        ->exists();
+
+    abort_unless($belongs, 403);
+
+    session([
+        'active_group_id' => $group->id
+    ]);
+
+    return redirect()->route('dashboard');
+}
 
     public function store(Request $request)
     {

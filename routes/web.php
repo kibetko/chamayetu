@@ -2,15 +2,14 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+
 
 Route::middleware('auth')->group(function () {
 
@@ -28,6 +27,34 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/groups', [GroupController::class, 'store'])
         ->name('groups.store');
+
+    Route::get('/dashboard', [
+        DashboardController::class,
+        'index'
+    ])->name('dashboard');
+    Route::get('/groups/switch/{group}', [
+    GroupController::class,
+    'switch'
+])->name('groups.switch');
+        Route::get('/groups', [
+    GroupController::class,
+    'index'
+])->name('groups.index');
+
+Route::get('/groups/{group}', [
+    GroupController::class,
+    'show'
+])->name('groups.show');
+
+Route::get('/groups/{group}/join', [
+    GroupController::class,
+    'joinForm'
+])->name('groups.join');
+
+Route::post('/groups/{group}/join', [
+    GroupController::class,
+    'submitJoinRequest'
+])->name('groups.join.submit');
 });
 
 require __DIR__.'/auth.php';
