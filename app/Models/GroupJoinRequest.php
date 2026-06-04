@@ -28,4 +28,7 @@ class GroupJoinRequest extends Model
             'reviewed_by'
         );
     }
+    
+    
+    
 }

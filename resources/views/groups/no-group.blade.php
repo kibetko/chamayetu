@@ -23,7 +23,7 @@
                 </a>
 
                 <a
-    href="{{ route('groups.index') }}"
+    href="{{ route('groups.join') }}"
     class="bg-green-600 text-white px-6 py-3 rounded-lg">
 
     Join Group

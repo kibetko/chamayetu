@@ -1,294 +1,315 @@
-
-
-    <x-app-layout>
+<x-app-layout>
 
 <div class="flex h-screen bg-gray-100">
 
-```
-<!-- Mobile Overlay -->
-<div
-    id="overlay"
-    class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden">
-</div>
-
-<!-- Sidebar -->
-<aside
-    id="sidebar"
-    class="fixed lg:relative z-50 w-72 h-full bg-blue-900 text-white transform -translate-x-full lg:translate-x-0 transition-all duration-300">
-
-    <!-- Logo -->
-    <div class="p-6 border-b border-blue-800">
-
-        <h1 class="text-2xl font-bold">
-            ChamaYetu
-        </h1>
-
+    <!-- Mobile Overlay -->
+    <div
+        id="overlay"
+        class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden">
     </div>
 
-    <!-- Group Switcher -->
-    <div class="p-4 border-b border-blue-800">
+    <!-- Sidebar -->
+    <aside
+        id="sidebar"
+        class="fixed lg:relative z-50 w-72 h-full bg-blue-900 text-white transform -translate-x-full lg:translate-x-0 transition-all duration-300">
 
-        <label class="block text-sm mb-2">
-            Active Group
-        </label>
+        <!-- Logo -->
+        <div class="p-6 border-b border-blue-800">
+            <h1 class="text-2xl font-bold">
+                ChamaYetu
+            </h1>
+        </div>
 
-        <select
-            onchange="window.location.href=this.value"
-            class="w-full rounded text-black p-2">
+        <!-- Group Switcher -->
+        <div class="p-4 border-b border-blue-800">
 
-            @foreach($groups as $userGroup)
+            <label class="block text-sm mb-2">
+                Active Group
+            </label>
 
-                <option
-                    value="{{ route('groups.switch',$userGroup->id) }}"
-                    {{ $group->id == $userGroup->id ? 'selected' : '' }}>
+            <select
+                onchange="window.location.href=this.value"
+                class="w-full rounded text-black p-2">
 
-                    {{ $userGroup->name }}
+                @foreach($groups as $userGroup)
 
-                </option>
+                    <option
+                        value="{{ route('groups.switch',$userGroup->id) }}"
+                        {{ $group->id == $userGroup->id ? 'selected' : '' }}>
 
-            @endforeach
+                        {{ $userGroup->name }}
 
-        </select>
+                    </option>
 
-    </div>
+                @endforeach
 
-    <!-- Navigation -->
-    <nav class="p-4 space-y-2 flex-1">
+            </select>
 
-        <a href="#" class="block px-4 py-3 rounded bg-blue-700">
-            Dashboard
-        </a>
+        </div>
 
-        <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-            Members
-        </a>
+        <!-- Navigation -->
+        <nav class="p-4 space-y-2 flex-1">
 
-        <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-            Contributions
-        </a>
+            <a href="#" class="block px-4 py-3 rounded bg-blue-700">
+                Dashboard
+            </a>
 
-        <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-            Loans
-        </a>
+           <a
+    href="{{ route('members.index') }}"
+    class="block px-4 py-3 rounded hover:bg-blue-700">
 
-        <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-            Join Requests
-        </a>
+    Members
 
-        <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-            Invitations
-        </a>
+</a>
 
-        <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-            Reports
-        </a>
+            <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
+                Contributions
+            </a>
 
-        <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-            Settings
-        </a>
+            <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
+                Loans
+            </a>
 
-    </nav>
+            <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
+                Join Requests
+            </a>
 
-    <!-- Logout -->
-    <div class="p-4 border-t border-blue-800">
+            <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
+                Invitations
+            </a>
 
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
+            <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
+                Reports
+            </a>
 
-            <button
-                class="w-full bg-red-500 hover:bg-red-600 py-3 rounded">
+            <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
+                Settings
+            </a>
 
-                Logout
+        </nav>
 
-            </button>
+        <!-- Logout -->
+        <div class="p-4 border-t border-blue-800">
 
-        </form>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
 
-    </div>
+                <button
+                    class="w-full bg-red-500 hover:bg-red-600 py-3 rounded">
 
-</aside>
+                    Logout
 
-<!-- Main -->
-<main class="flex-1 overflow-y-auto">
+                </button>
 
-    <!-- Header -->
-    <div class="bg-white shadow p-4 flex items-center justify-between">
+            </form>
 
-        <div class="flex items-center gap-3">
+        </div>
 
-            <button
-                id="menuButton"
-                class="lg:hidden">
+    </aside>
 
-                ☰
+    <!-- Main -->
+    <main class="flex-1 overflow-y-auto">
 
-            </button>
+        <!-- Header -->
+        <div class="bg-white shadow p-4 flex items-center justify-between">
+
+            <div class="flex items-center gap-3">
+
+                <button
+                    id="menuButton"
+                    class="lg:hidden">
+
+                    ☰
+
+                </button>
+
+                <div>
+
+                    <h2 class="text-2xl font-bold">
+                        {{ $group->name }}
+                    </h2>
+
+                    <p class="text-gray-500">
+                        {{ $group->description }}
+                    </p>
+
+                </div>
+
+            </div>
 
             <div>
-
-                <h2 class="text-2xl font-bold">
-
-                    {{ $group->name }}
-
-                </h2>
-
-                <p class="text-gray-500">
-
-                    {{ $group->description }}
-
-                </p>
-
+                <span class="font-medium">
+                    {{ auth()->user()->name }}
+                </span>
             </div>
 
         </div>
 
-        <div>
+        <!-- Content -->
+        <div class="p-6">
 
-            <span class="font-medium">
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
-                {{ auth()->user()->name }}
-
-            </span>
-
-        </div>
-
-    </div>
-
-    <!-- Content -->
-    <div class="p-6">
-
-        <!-- Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-
-            <div class="bg-white rounded-xl shadow p-6">
-
-                <h3 class="text-gray-500">
-                    Members
-                </h3>
-
-                <p class="text-3xl font-bold text-blue-600 mt-2">
-                    {{ $stats['members'] }}
-                </p>
-
-            </div>
-
-            <div class="bg-white rounded-xl shadow p-6">
-
-                <h3 class="text-gray-500">
-                    Total Contributions
-                </h3>
-
-                <p class="text-3xl font-bold text-green-600 mt-2">
-
-                    KES {{ number_format($stats['contributions']) }}
-
-                </p>
-
-            </div>
-
-            <div class="bg-white rounded-xl shadow p-6">
-
-                <h3 class="text-gray-500">
-                    Active Loans
-                </h3>
-
-                <p class="text-3xl font-bold text-orange-600 mt-2">
-
-                    {{ $stats['active_loans'] }}
-
-                </p>
-
-            </div>
-
-            <div class="bg-white rounded-xl shadow p-6">
-
-                <h3 class="text-gray-500">
-                    Join Requests
-                </h3>
-
-                <p class="text-3xl font-bold text-red-600 mt-2">
-
-                    {{ $stats['pending_requests'] }}
-
-                </p>
-
-            </div>
-
-        </div>
-
-        <!-- Activity + Requests -->
-        <div class="grid lg:grid-cols-2 gap-6 mt-8">
-
-            <div class="bg-white rounded-xl shadow">
-
-                <div class="p-4 border-b">
-
-                    <h3 class="font-bold">
-                        Recent Activity
-                    </h3>
-
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-gray-500">Members</h3>
+                    <p class="text-3xl font-bold text-blue-600 mt-2">
+                        {{ $stats['members'] }}
+                    </p>
                 </div>
 
-                <div class="p-4">
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-gray-500">Total Contributions</h3>
+                    <p class="text-3xl font-bold text-green-600 mt-2">
+                        KES {{ number_format($stats['contributions']) }}
+                    </p>
+                </div>
 
-                    No activity yet.
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-gray-500">Active Loans</h3>
+                    <p class="text-3xl font-bold text-orange-600 mt-2">
+                        {{ $stats['active_loans'] }}
+                    </p>
+                </div>
 
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-gray-500">Join Requests</h3>
+                    <p class="text-3xl font-bold text-red-600 mt-2">
+                        {{ $stats['pending_requests'] }}
+                    </p>
                 </div>
 
             </div>
 
-            <div class="bg-white rounded-xl shadow">
+            <!-- Activity + Requests -->
+            <div class="grid lg:grid-cols-2 gap-6 mt-8">
 
-                <div class="p-4 border-b">
+                <!-- Activity -->
+                <div class="bg-white rounded-xl shadow">
 
-                    <h3 class="font-bold">
-                        Pending Requests
-                    </h3>
+                    <div class="p-4 border-b">
+                        <h3 class="font-bold">
+                            Recent Activity
+                        </h3>
+                    </div>
+
+                    <div class="p-4">
+                        No activity yet.
+                    </div>
 
                 </div>
 
-                <div class="p-4">
+                <!-- Pending Requests -->
+                <div class="bg-white rounded-xl shadow">
 
-                    @forelse(
-                        $group->joinRequests()
-                            ->where('status','pending')
-                            ->latest()
-                            ->take(5)
-                            ->get()
+                    <div class="p-4 border-b">
+                        <h3 class="font-bold">
+                            Pending Requests
+                        </h3>
+                    </div>
 
-                        as $request
-                    )
+                    <div class="p-4">
+                        @php
 
-                        <div class="flex justify-between py-2">
+                        $currentMember = $group->members
+                            ->where(
+                                'user_id',
+                                auth()->id()
+                            )
+                            ->first();
 
-                            <span>
-                                {{ $request->user->name }}
-                            </span>
+                        @endphp
+                        @php
+                        $isChairperson =
+                            $currentMember &&
+                            $currentMember->role === 'chairperson';
+                        @endphp
 
-                            <span class="text-yellow-600">
-                                Pending
-                            </span>
+                        @forelse(
+                            $group->joinRequests()
+                                ->where('status','pending')
+                                ->latest()
+                                ->get()
+                            as $request
+                        )
+
+                            <div class="border-b py-3">
+
+                                <div class="flex justify-between items-center">
+
+                                    <div>
+
+                                        <p class="font-semibold">
+                                            {{ $request->user->name }}
+                                        </p>
+
+                                        <p class="text-sm text-gray-500">
+                                            {{ $request->phone_number }}
+                                        </p>
+
+                                        @if($request->message)
+                                            <p class="text-sm text-gray-600 mt-1">
+                                                {{ $request->message }}
+                                            </p>
+                                        @endif
+
+                                    </div>
+
+                                    <div class="flex gap-2">
+
+                                        <form
+                                            method="POST"
+                                            action="{{ route('join-requests.approve', $request->id) }}">
+
+                                            @csrf
+
+                                            <button
+                                                type="submit"
+                                                class="bg-green-600 text-white px-3 py-1 rounded">
+
+                                                Approve
+
+                                            </button>
+
+                                        </form>
+
+                                        <form
+                                            method="POST"
+                                            action="{{ route('join-requests.reject', $request->id) }}">
+
+                                            @csrf
+
+                                            <button
+                                                type="submit"
+                                                class="bg-red-600 text-white px-3 py-1 rounded">
+
+                                                Reject
+
+                                            </button>
+
+                                        </form>
+
+                                        </div>
+
+                                        </div>
+
+                                            @empty
+
+                                                <p class="text-gray-500">
+                                                    No pending requests
+                                                </p>
+
+                                            @endforelse
 
                         </div>
 
-                    @empty
-
-                        <p class="text-gray-500">
-                            No pending requests
-                        </p>
-
-                    @endforelse
+                    </div>
 
                 </div>
 
             </div>
 
-        </div>
-
-    </div>
-
-</main>
-```
+    </main>
 
 </div>
 
@@ -322,5 +343,3 @@ overlay?.addEventListener('click', () => {
 </script>
 
 </x-app-layout>
-
-

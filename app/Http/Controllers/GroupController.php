@@ -160,4 +160,95 @@ class GroupController extends Controller
                 'Group created successfully.'
             );
     }
+
+    public function approveJoinRequest(
+    GroupJoinRequest $request
+)
+{
+    $currentMember = GroupMember::where(
+        'group_id',
+        $request->group_id
+    )
+    ->where(
+        'user_id',
+        auth()->id()
+    )
+    ->first();
+
+    if (
+        !$currentMember ||
+        $currentMember->role !== 'chairperson'
+    ) {
+        abort(
+            403,
+            'Only the chairperson can approve requests.'
+        );
+    }
+
+    GroupMember::create([
+        'group_id' => $request->group_id,
+        'user_id' => $request->user_id,
+        'role' => 'member',
+        'status' => 'active',
+        'joined_at' => now()
+    ]);
+
+    $request->update([
+        'status' => 'approved',
+        'reviewed_by' => auth()->id(),
+        'reviewed_at' => now()
+    ]);
+
+    return back()->with(
+        'success',
+        'Member approved successfully'
+    );
+}
+
+public function rejectJoinRequest(
+    GroupJoinRequest $request
+)
+{
+    $currentMember = GroupMember::where(
+        'group_id',
+        $request->group_id
+    )
+    ->where(
+        'user_id',
+        auth()->id()
+    )
+    ->first();
+
+    if (
+        !$currentMember ||
+        $currentMember->role !== 'chairperson'
+    ) {
+        abort(
+            403,
+            'Only the chairperson can reject requests.'
+        );
+    }
+
+    $request->update([
+        'status' => 'rejected',
+        'reviewed_by' => auth()->id(),
+        'reviewed_at' => now()
+    ]);
+
+    return back()->with(
+        'success',
+        'Request rejected successfully'
+    );
+}
+public function members()
+{
+    $group = auth()->user()
+        ->groups()
+        ->findOrFail(session('active_group_id'));
+
+    return view('groups.members', [
+        'group' => $group
+    ]);
+}
+
 }

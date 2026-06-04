@@ -15,7 +15,7 @@ class GroupFactory extends Factory
 
             'unique_code' => strtoupper(fake()->bothify('GRP###')),
 
-            'group_password' => Hash::make('123456'),
+           
 
             'description' => fake()->sentence(),
 

@@ -12,8 +12,9 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         if ($user->groups()->count() === 0) {
-            return view('groups.no-group');
-        }
+
+    return view('groups.no-group');
+}
 
         $activeGroupId = session('active_group_id');
 
@@ -29,12 +30,27 @@ class DashboardController extends Controller
             ]);
         }
 
-        $group = Group::with([
-            'members',
-            'contributions',
-            'loans',
-            'settings'
-        ])->findOrFail($activeGroupId);
+        $group = $user->groups()
+    ->with([
+        'members',
+        'contributions',
+        'loans',
+        'settings',
+        'joinRequests.user'
+    ])
+    ->where('groups.id', $activeGroupId)
+    ->first();
+
+if (!$group) {
+
+    session()->forget('active_group_id');
+
+    return redirect()
+        ->route('groups.index')
+        ->withErrors([
+            'group' => 'Invalid active group.'
+        ]);
+}
 
         $stats = [
 

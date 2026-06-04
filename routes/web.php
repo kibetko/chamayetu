@@ -28,6 +28,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/groups', [GroupController::class, 'store'])
         ->name('groups.store');
 
+    Route::post(
+    '/join-requests/{request}/approve',
+    [GroupController::class, 'approveJoinRequest']
+)->name('join-requests.approve');
+
+Route::post(
+    '/join-requests/{request}/reject',
+    [GroupController::class, 'rejectJoinRequest']
+)->name('join-requests.reject');
+
     Route::get('/dashboard', [
         DashboardController::class,
         'index'
@@ -53,5 +63,11 @@ Route::post(
     [GroupController::class, 'submitJoinRequest']
 )->name('groups.join.submit');
 });
+
+Route::get(
+    '/members',
+    [GroupController::class, 'members']
+)->name('members.index');
+
 
 require __DIR__.'/auth.php';
