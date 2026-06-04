@@ -41,20 +41,17 @@ Route::middleware('auth')->group(function () {
     'index'
 ])->name('groups.index');
 
-Route::get('/groups/{group}', [
-    GroupController::class,
-    'show'
-])->name('groups.show');
 
-Route::get('/groups/{group}/join', [
-    GroupController::class,
-    'joinForm'
-])->name('groups.join');
 
-Route::post('/groups/{group}/join', [
-    GroupController::class,
-    'submitJoinRequest'
-])->name('groups.join.submit');
+Route::get(
+    '/groups/join',
+    [GroupController::class, 'joinForm']
+)->name('groups.join');
+
+Route::post(
+    '/groups/join',
+    [GroupController::class, 'submitJoinRequest']
+)->name('groups.join.submit');
 });
 
 require __DIR__.'/auth.php';

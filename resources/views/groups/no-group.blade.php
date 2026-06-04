@@ -23,12 +23,12 @@
                 </a>
 
                 <a
-                    href="{{ route('groups.join') }}"
-                    class="bg-green-600 text-white px-6 py-3 rounded-lg">
+    href="{{ route('groups.index') }}"
+    class="bg-green-600 text-white px-6 py-3 rounded-lg">
 
-                    Join Group
+    Join Group
 
-                </a>
+</a>
 
             </div>
 

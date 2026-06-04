@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('group_join_requests', function (Blueprint $table) {
+      Schema::create('group_join_requests', function (Blueprint $table) {
 
     $table->id();
 
@@ -23,13 +23,15 @@ return new class extends Migration
           ->constrained()
           ->cascadeOnDelete();
 
+    $table->string('phone_number');
+
+    $table->text('message')->nullable();
+
     $table->enum('status', [
         'pending',
         'approved',
         'rejected'
     ])->default('pending');
-
-    $table->text('message')->nullable();
 
     $table->foreignId('reviewed_by')
           ->nullable()
@@ -40,11 +42,6 @@ return new class extends Migration
           ->nullable();
 
     $table->timestamps();
-
-    $table->unique([
-        'group_id',
-        'user_id'
-    ]);
 });
     }
 

@@ -23,6 +23,9 @@ class GroupJoinRequest extends Model
 
     public function reviewer()
     {
-        return $this->belongsTo(User::class, 'reviewed_by');
+        return $this->belongsTo(
+            User::class,
+            'reviewed_by'
+        );
     }
 }
