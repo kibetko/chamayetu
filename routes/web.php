@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MemberController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -27,16 +28,6 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/groups', [GroupController::class, 'store'])
         ->name('groups.store');
-
-    Route::post(
-    '/join-requests/{request}/approve',
-    [GroupController::class, 'approveJoinRequest']
-)->name('join-requests.approve');
-
-Route::post(
-    '/join-requests/{request}/reject',
-    [GroupController::class, 'rejectJoinRequest']
-)->name('join-requests.reject');
 
     Route::get('/dashboard', [
         DashboardController::class,
@@ -63,11 +54,19 @@ Route::post(
     [GroupController::class, 'submitJoinRequest']
 )->name('groups.join.submit');
 });
+Route::post(
+    '/join-requests/{request}/approve',
+    [GroupController::class, 'approveJoinRequest']
+)->name('join-requests.approve');
 
-Route::get(
-    '/members',
-    [GroupController::class, 'members']
-)->name('members.index');
+Route::post(
+    '/join-requests/{request}/reject',
+    [GroupController::class, 'rejectJoinRequest']
+)->name('join-requests.reject');
 
+Route::get('/members', [
+        MemberController::class,
+        'index'
+    ])->name('members.index');
 
 require __DIR__.'/auth.php';
