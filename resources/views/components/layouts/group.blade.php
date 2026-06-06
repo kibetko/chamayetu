@@ -1,111 +1,126 @@
 @props([
     'group',
-    'groups'
+    'groups' => collect(),
 ])
 
 <x-app-layout>
+<div class="flex h-screen bg-[#D9E3F4]">
 
-<div class="flex h-screen bg-gray-100">
-
-    <!-- Overlay -->
+    {{-- Mobile Overlay --}}
     <div
         id="overlay"
-        class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden">
+        class="fixed inset-0 z-40 hidden bg-black/50 lg:hidden">
     </div>
 
-    <!-- Sidebar -->
+    {{-- Sidebar --}}
     <aside
         id="sidebar"
-        class="fixed lg:relative z-50 w-72 h-full bg-blue-900 text-white transform -translate-x-full lg:translate-x-0 transition-all duration-300">
+        class="fixed lg:relative z-50 flex h-full w-56 flex-col bg-[#14263A] text-white transform -translate-x-full lg:translate-x-0 transition-all duration-300">
 
-        <!-- Logo -->
-        <div class="p-6 border-b border-blue-800">
-            <h1 class="text-2xl font-bold">
-                ChamaYetu
-            </h1>
+        {{-- Logo --}}
+        <div class="p-5 pb-4">
+            <div class="flex items-center gap-3">
+
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500">
+                    <img
+                        src="/images/logo-icon.png"
+                        alt="Logo"
+                        class="h-4 w-4">
+                </div>
+
+                <div>
+                    <span class="text-lg font-bold">
+                        Chama<span class="text-emerald-400">Yetu</span>
+                    </span>
+
+                    <p class="mt-0.5 text-[10px] text-[#8a9bb0]">
+                        Active Period: 2024
+                    </p>
+                </div>
+
+            </div>
         </div>
 
-        <!-- Group Switcher -->
-        <div class="p-4 border-b border-blue-800">
+        {{-- Group Switcher --}}
+        @if($groups->count())
+            <div class="px-4 pb-4">
 
-            <label class="block text-sm mb-2">
-                Active Group
-            </label>
+                <select
+                    onchange="window.location.href=this.value"
+                    class="w-full rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300">
 
-            <select
-                onchange="window.location.href=this.value"
-                class="w-full rounded text-black p-2">
+                    @foreach($groups as $userGroup)
 
-                @foreach($groups as $userGroup)
+                        <option
+                            value="{{ route('groups.switch', $userGroup->id) }}"
+                            {{ $group->id == $userGroup->id ? 'selected' : '' }}>
 
-                    <option
-                        value="{{ route('groups.switch',$userGroup->id) }}"
-                        {{ $group->id == $userGroup->id ? 'selected' : '' }}>
+                            {{ $userGroup->name }}
 
-                        {{ $userGroup->name }}
+                        </option>
 
-                    </option>
+                    @endforeach
 
-                @endforeach
+                </select>
 
-            </select>
+            </div>
+        @endif
 
-        </div>
+        <div class="mx-4 border-t border-[#2A3F58]"></div>
 
-        <!-- Navigation -->
-        <nav class="p-4 space-y-2">
+        {{-- Navigation --}}
+        <nav class="flex-1 px-3 py-4 space-y-1">
 
             <a
                 href="{{ route('dashboard') }}"
-                class="block px-4 py-3 rounded hover:bg-blue-700">
+                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
+                {{ request()->routeIs('dashboard')
+                    ? 'bg-[#2563EB] text-white font-semibold'
+                    : 'text-[#b0c4d8] hover:bg-[#243550] hover:text-white' }}">
 
                 Dashboard
 
             </a>
 
             <a
-                href="{{ route('members.index') }}"
-                class="block px-4 py-3 rounded hover:bg-blue-700">
+                href="#"
+                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
+                {{ request()->routeIs('payments.*')
+                    ? 'bg-[#2563EB] text-white font-semibold'
+                    : 'text-[#b0c4d8] hover:bg-[#243550] hover:text-white' }}">
 
-                Members
+                Payments
 
             </a>
 
             <a
                 href="#"
-                class="block px-4 py-3 rounded hover:bg-blue-700">
-
-                Contributions
-
-            </a>
-
-            <a
-                href="#"
-                class="block px-4 py-3 rounded hover:bg-blue-700">
+                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
+                {{ request()->routeIs('loans.*')
+                    ? 'bg-[#2563EB] text-white font-semibold'
+                    : 'text-[#b0c4d8] hover:bg-[#243550] hover:text-white' }}">
 
                 Loans
 
             </a>
 
             <a
-                href="#"
-                class="block px-4 py-3 rounded hover:bg-blue-700">
+                href="{{ route('members.index') }}"
+                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
+                {{ request()->routeIs('members.*')
+                    ? 'bg-[#2563EB] text-white font-semibold'
+                    : 'text-[#b0c4d8] hover:bg-[#243550] hover:text-white' }}">
 
-                Join Requests
-
-            </a>
-
-            <a
-                href="#"
-                class="block px-4 py-3 rounded hover:bg-blue-700">
-
-                Reports
+                Members
 
             </a>
 
             <a
-                href="#"
-                class="block px-4 py-3 rounded hover:bg-blue-700">
+                href="{{ route('groups.settings') }}"
+                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
+                {{ request()->routeIs('groups.settings')
+                    ? 'bg-[#2563EB] text-white font-semibold'
+                    : 'text-[#b0c4d8] hover:bg-[#243550] hover:text-white' }}">
 
                 Settings
 
@@ -113,14 +128,41 @@
 
         </nav>
 
-        <!-- Logout -->
-        <div class="p-4 border-t border-blue-800">
+        <div class="mx-4 border-t border-[#2A3F58]"></div>
 
-            <form method="POST" action="{{ route('logout') }}">
+        {{-- Loan Button --}}
+        <div class="px-4 py-4">
+
+            <a
+                href="#"
+                class="block w-full rounded-xl border border-emerald-500 py-3 text-center text-sm font-semibold text-white transition hover:bg-emerald-500">
+
+                Apply for Loan
+
+            </a>
+
+        </div>
+
+        {{-- Footer --}}
+        <div class="space-y-1 px-4 pb-6">
+
+            <a
+                href="#"
+                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#b0c4d8] transition hover:bg-[#243550] hover:text-white">
+
+                Help Center
+
+            </a>
+
+            <form
+                method="POST"
+                action="{{ route('logout') }}">
+
                 @csrf
 
                 <button
-                    class="w-full bg-red-500 hover:bg-red-600 py-3 rounded">
+                    type="submit"
+                    class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#b0c4d8] transition hover:bg-[#243550] hover:text-white">
 
                     Logout
 
@@ -132,43 +174,23 @@
 
     </aside>
 
-    <!-- Main Area -->
-    <main class="flex-1 overflow-y-auto">
+    {{-- Main Content --}}
+    <main class="flex-1 overflow-y-auto bg-[#D9E3F4]">
 
-        <!-- Header -->
-        <div class="bg-white shadow p-4 flex justify-between items-center">
+        {{-- Mobile Header --}}
+        <div class="flex items-center gap-3 bg-white p-4 shadow lg:hidden">
 
-            <div class="flex items-center gap-3">
+            <button id="menuButton">
+                ☰
+            </button>
 
-                <button
-                    id="menuButton"
-                    class="lg:hidden">
-
-                    ☰
-
-                </button>
-
-                <div>
-
-                    <h2 class="text-2xl font-bold">
-                        {{ $group->name }}
-                    </h2>
-
-                    <p class="text-gray-500">
-                        {{ $group->description }}
-                    </p>
-
-                </div>
-
-            </div>
-
-            <span class="font-medium">
-                {{ auth()->user()->name }}
+            <span class="font-semibold text-[#14263A]">
+                ChamaYetu
             </span>
 
         </div>
 
-        <!-- Dynamic Content -->
+        {{-- Page Content --}}
         <div class="p-6">
 
             {{ $slot }}
@@ -179,33 +201,30 @@
 
 </div>
 
+@push('scripts')
 <script>
+document.addEventListener('DOMContentLoaded', () => {
 
-const sidebar =
-document.getElementById('sidebar');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const button = document.getElementById('menuButton');
 
-const overlay =
-document.getElementById('overlay');
+    button?.addEventListener('click', () => {
 
-const button =
-document.getElementById('menuButton');
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
 
-button?.addEventListener('click', () => {
+    });
 
-    sidebar.classList.toggle('-translate-x-full');
+    overlay?.addEventListener('click', () => {
 
-    overlay.classList.toggle('hidden');
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
 
-});
-
-overlay?.addEventListener('click', () => {
-
-    sidebar.classList.add('-translate-x-full');
-
-    overlay.classList.add('hidden');
+    });
 
 });
-
 </script>
+@endpush
 
 </x-app-layout>

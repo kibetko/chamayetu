@@ -100,7 +100,7 @@ class GroupController extends Controller
         if ($pendingRequest) {
             return back()
                 ->withErrors([
-                    'group_code' => 'You already have a pending request for this group.'
+                    'group_code' => 'You already have a pending request.'
                 ]);
         }
 
@@ -144,8 +144,6 @@ class GroupController extends Controller
 
         GroupSetting::create([
             'group_id' => $group->id,
-            'allow_join_requests' => $request->boolean('allow_join_requests'),
-            'require_approval' => true,
             'updated_by' => Auth::id()
         ]);
 
@@ -162,93 +160,247 @@ class GroupController extends Controller
     }
 
     public function approveJoinRequest(
-    GroupJoinRequest $request
-)
-{
-    $currentMember = GroupMember::where(
-        'group_id',
-        $request->group_id
+        GroupJoinRequest $request
     )
-    ->where(
-        'user_id',
-        auth()->id()
-    )
-    ->first();
+    {
+        $this->ensureChairperson(
+            $request->group_id
+        );
 
-    if (
-        !$currentMember ||
-        $currentMember->role !== 'chairperson'
-    ) {
-        abort(
-            403,
-            'Only the chairperson can approve requests.'
+        GroupMember::create([
+            'group_id' => $request->group_id,
+            'user_id' => $request->user_id,
+            'role' => 'member',
+            'status' => 'active',
+            'joined_at' => now()
+        ]);
+
+        $request->update([
+            'status' => 'approved',
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now()
+        ]);
+
+        return back()->with(
+            'success',
+            'Member approved successfully.'
         );
     }
 
-    GroupMember::create([
-        'group_id' => $request->group_id,
-        'user_id' => $request->user_id,
-        'role' => 'member',
-        'status' => 'active',
-        'joined_at' => now()
-    ]);
-
-    $request->update([
-        'status' => 'approved',
-        'reviewed_by' => auth()->id(),
-        'reviewed_at' => now()
-    ]);
-
-    return back()->with(
-        'success',
-        'Member approved successfully'
-    );
-}
-
-public function rejectJoinRequest(
-    GroupJoinRequest $request
-)
-{
-    $currentMember = GroupMember::where(
-        'group_id',
-        $request->group_id
+    public function rejectJoinRequest(
+        GroupJoinRequest $request
     )
-    ->where(
-        'user_id',
-        auth()->id()
-    )
-    ->first();
+    {
+        $this->ensureChairperson(
+            $request->group_id
+        );
 
-    if (
-        !$currentMember ||
-        $currentMember->role !== 'chairperson'
-    ) {
-        abort(
-            403,
-            'Only the chairperson can reject requests.'
+        $request->update([
+            'status' => 'rejected',
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now()
+        ]);
+
+        return back()->with(
+            'success',
+            'Request rejected successfully.'
         );
     }
 
-    $request->update([
-        'status' => 'rejected',
-        'reviewed_by' => auth()->id(),
-        'reviewed_at' => now()
-    ]);
+    public function members()
+    {
+        $group = auth()
+            ->user()
+            ->groups()
+            ->with('members')
+            ->findOrFail(
+                session('active_group_id')
+            );
 
-    return back()->with(
-        'success',
-        'Request rejected successfully'
-    );
-}
-public function members()
+        return view('groups.members', [
+            'group' => $group,
+            'groups' => auth()->user()->groups
+        ]);
+    }
+
+   public function settings()
 {
-    $group = auth()->user()
-        ->groups()
-        ->findOrFail(session('active_group_id'));
+    $groupId = session('active_group_id');
 
-    return view('groups.members', [
-        'group' => $group
+    $this->ensureChairperson($groupId);
+
+    $group = Group::with([
+        'members',
+        'settings'
+    ])->findOrFail($groupId);
+
+    $chairperson = $group->members
+        ->firstWhere('pivot.role', 'chairperson');
+
+    $secretary = $group->members
+        ->firstWhere('pivot.role', 'secretary');
+
+    $treasurer = $group->members
+        ->firstWhere('pivot.role', 'treasurer');
+
+    return view('groups.settings', [
+        'group' => $group,
+        'groups' => auth()->user()->groups,
+        'chairperson' => $chairperson,
+        'secretary' => $secretary,
+        'treasurer' => $treasurer,
     ]);
 }
 
+    public function updateSettings(
+        Request $request
+    )
+    {
+        $groupId = session(
+            'active_group_id'
+        );
+
+        $this->ensureChairperson(
+            $groupId
+        );
+
+        $validated = $request->validate([
+            'interest_rate' =>
+                'nullable|numeric|min:0',
+
+            'repayment_period_days' =>
+                'nullable|integer|min:1',
+
+            'grace_period_days' =>
+                'nullable|integer|min:0',
+
+            'late_penalty_amount' =>
+                'nullable|numeric|min:0',
+
+            'late_penalty_type' =>
+                'nullable|in:fixed,percentage',
+
+            'minimum_contribution' =>
+                'nullable|numeric|min:0',
+
+            'maximum_loan_multiplier' =>
+                'nullable|numeric|min:1',
+
+            'chairperson_id' =>
+                'nullable|exists:users,id|different:secretary_id|different:treasurer_id',
+
+            'secretary_id' =>
+                'nullable|exists:users,id|different:chairperson_id|different:treasurer_id',
+
+            'treasurer_id' =>
+                'nullable|exists:users,id|different:chairperson_id|different:secretary_id',
+        ]);
+
+        $group = Group::findOrFail(
+            $groupId
+        );
+
+        $group->settings()
+            ->updateOrCreate(
+                [
+                    'group_id' => $group->id
+                ],
+                [
+                    'interest_rate' => $validated['interest_rate'] ?? null,
+                    'repayment_period_days' => $validated['repayment_period_days'] ?? null,
+                    'grace_period_days' => $validated['grace_period_days'] ?? null,
+                    'late_penalty_amount' => $validated['late_penalty_amount'] ?? null,
+                    'late_penalty_type' => $validated['late_penalty_type'] ?? null,
+                    'minimum_contribution' => $validated['minimum_contribution'] ?? null,
+                    'maximum_loan_multiplier' => $validated['maximum_loan_multiplier'] ?? null,
+                    'updated_by' => auth()->id()
+                ]
+            );
+
+        GroupMember::where(
+    'group_id',
+    $group->id
+)
+->whereIn('role', [
+    'chairperson',
+    'secretary',
+    'treasurer'
+])
+->update([
+    'role' => 'member'
+]);
+
+$this->setRole(
+    $group,
+    $request->chairperson_id,
+    'chairperson'
+);
+
+$this->setRole(
+    $group,
+    $request->secretary_id,
+    'secretary'
+);
+
+$this->setRole(
+    $group,
+    $request->treasurer_id,
+    'treasurer'
+);
+
+        return back()->with(
+            'success',
+            'Settings updated successfully.'
+        );
+    }
+
+    private function ensureChairperson(
+        int $groupId
+    )
+    {
+        $member = GroupMember::where(
+            'group_id',
+            $groupId
+        )
+        ->where(
+            'user_id',
+            auth()->id()
+        )
+        ->first();
+
+        if (
+            !$member ||
+            $member->role !== 'chairperson'
+        ) {
+            abort(
+                403,
+                'Only the chairperson can perform this action.'
+            );
+        }
+
+        return $member;
+    }
+
+    private function setRole(
+    Group $group,
+    ?int $userId,
+    string $role
+)
+{
+    if (!$userId) {
+        return;
+    }
+
+    GroupMember::where(
+        'group_id',
+        $group->id
+    )
+    ->where(
+        'user_id',
+        $userId
+    )
+    ->update([
+        'role' => $role
+    ]);
+}
 }

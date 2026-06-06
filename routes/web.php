@@ -69,4 +69,14 @@ Route::get('/members', [
         'index'
     ])->name('members.index');
 
+Route::get(
+    '/group/settings',
+    [GroupController::class, 'settings']
+)->name('groups.settings');
+
+Route::post(
+    '/group/settings',
+    [GroupController::class, 'updateSettings']
+)->name('groups.settings.update');
+
 require __DIR__.'/auth.php';

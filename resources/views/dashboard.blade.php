@@ -1,4 +1,6 @@
-<x-app-layout>
+<x-layouts.group
+    :group="$group"
+    :groups="$groups">
 
 <div class="flex h-screen bg-gray-100">
 
@@ -9,103 +11,7 @@
     </div>
 
     <!-- Sidebar -->
-    <aside
-        id="sidebar"
-        class="fixed lg:relative z-50 w-72 h-full bg-blue-900 text-white transform -translate-x-full lg:translate-x-0 transition-all duration-300">
-
-        <!-- Logo -->
-        <div class="p-6 border-b border-blue-800">
-            <h1 class="text-2xl font-bold">
-                ChamaYetu
-            </h1>
-        </div>
-
-        <!-- Group Switcher -->
-        <div class="p-4 border-b border-blue-800">
-
-            <label class="block text-sm mb-2">
-                Active Group
-            </label>
-
-            <select
-                onchange="window.location.href=this.value"
-                class="w-full rounded text-black p-2">
-
-                @foreach($groups as $userGroup)
-
-                    <option
-                        value="{{ route('groups.switch',$userGroup->id) }}"
-                        {{ $group->id == $userGroup->id ? 'selected' : '' }}>
-
-                        {{ $userGroup->name }}
-
-                    </option>
-
-                @endforeach
-
-            </select>
-
-        </div>
-
-        <!-- Navigation -->
-        <nav class="p-4 space-y-2 flex-1">
-
-            <a href="#" class="block px-4 py-3 rounded bg-blue-700">
-                Dashboard
-            </a>
-
-           <a
-    href="{{ route('members.index') }}"
-    class="block px-4 py-3 rounded hover:bg-blue-700">
-
-    Members
-
-</a>
-
-            <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-                Contributions
-            </a>
-
-            <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-                Loans
-            </a>
-
-            <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-                Join Requests
-            </a>
-
-            <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-                Invitations
-            </a>
-
-            <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-                Reports
-            </a>
-
-            <a href="#" class="block px-4 py-3 rounded hover:bg-blue-700">
-                Settings
-            </a>
-
-        </nav>
-
-        <!-- Logout -->
-        <div class="p-4 border-t border-blue-800">
-
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-
-                <button
-                    class="w-full bg-red-500 hover:bg-red-600 py-3 rounded">
-
-                    Logout
-
-                </button>
-
-            </form>
-
-        </div>
-
-    </aside>
+    
 
     <!-- Main -->
     <main class="flex-1 overflow-y-auto">
@@ -208,6 +114,130 @@
                 </div>
 
             </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mt-6">
+
+    <div class="bg-white rounded-xl shadow p-6">
+        <h3 class="text-gray-500">Total Loaned</h3>
+
+        <p class="text-3xl font-bold text-blue-600 mt-2">
+            KES {{ number_format($loanStats['total_loaned']) }}
+        </p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-6">
+        <h3 class="text-gray-500">Total Repaid</h3>
+
+        <p class="text-3xl font-bold text-green-600 mt-2">
+            KES {{ number_format($loanStats['total_repaid']) }}
+        </p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-6">
+        <h3 class="text-gray-500">Outstanding Balance</h3>
+
+        <p class="text-3xl font-bold text-orange-600 mt-2">
+            KES {{ number_format($loanStats['outstanding']) }}
+        </p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-6">
+        <h3 class="text-gray-500">Recovery Rate</h3>
+
+        <p class="text-3xl font-bold text-purple-600 mt-2">
+            {{ number_format($recoveryRate, 1) }}%
+        </p>
+    </div>
+
+</div>
+<div class="bg-white rounded-xl shadow mt-8">
+
+    <div class="p-4 border-b">
+        <h3 class="font-bold">
+            Top Borrowers
+        </h3>
+    </div>
+
+    <div class="p-4">
+
+        @forelse($topBorrowers as $borrower)
+
+            <div class="flex justify-between py-3 border-b">
+
+                <span>
+                    {{ $borrower->user->name }}
+                </span>
+
+                <span class="font-semibold text-blue-600">
+                    KES {{ number_format($borrower->total_borrowed) }}
+                </span>
+
+            </div>
+
+        @empty
+
+            <p class="text-gray-500">
+                No loans recorded yet.
+            </p>
+
+        @endforelse
+
+    </div>
+
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+
+    <div class="bg-white rounded-xl shadow p-6">
+
+        <h3 class="text-gray-500">
+            Active Loans
+        </h3>
+
+        <p class="text-3xl font-bold text-blue-600 mt-2">
+            {{ $loanStats['active_loans'] }}
+        </p>
+
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-6">
+
+        <h3 class="text-gray-500">
+            Completed Loans
+        </h3>
+
+        <p class="text-3xl font-bold text-green-600 mt-2">
+            {{ $loanStats['completed_loans'] }}
+        </p>
+
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-6">
+
+        <h3 class="text-gray-500">
+            Overdue Loans
+        </h3>
+
+        <p class="text-3xl font-bold text-red-600 mt-2">
+            {{ $loanStats['overdue_loans'] }}
+        </p>
+
+    </div>
+
+</div>
+
+<div class="bg-white rounded-xl shadow mt-8">
+
+    <div class="p-4 border-b">
+        <h3 class="font-bold">
+            Monthly Loan Disbursements
+        </h3>
+    </div>
+
+    <div class="p-4">
+        <canvas id="loanChart"></canvas>
+    </div>
+
+</div>
+            
 
             <!-- Activity + Requests -->
             <div class="grid lg:grid-cols-2 gap-6 mt-8">
@@ -340,34 +370,28 @@
     </main>
 
 </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+const ctx = document.getElementById('loanChart');
 
-const sidebar =
-document.getElementById('sidebar');
-
-const overlay =
-document.getElementById('overlay');
-
-const button =
-document.getElementById('menuButton');
-
-button?.addEventListener('click', () => {
-
-    sidebar.classList.toggle('-translate-x-full');
-
-    overlay.classList.toggle('hidden');
-
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: @json($monthlyLoans->pluck('month')),
+        datasets: [{
+            label: 'Loan Amount',
+            data: @json($monthlyLoans->pluck('total')),
+            borderWidth: 3,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive: true
+    }
 });
-
-overlay?.addEventListener('click', () => {
-
-    sidebar.classList.add('-translate-x-full');
-
-    overlay.classList.add('hidden');
-
-});
-
 </script>
 
-</x-app-layout>
+
+
+</x-layouts.group>
