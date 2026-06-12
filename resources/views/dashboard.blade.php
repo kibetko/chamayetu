@@ -21,13 +21,7 @@
 
             <div class="flex items-center gap-3">
 
-                <button
-                    id="menuButton"
-                    class="lg:hidden">
-
-                    ☰
-
-                </button>
+                
 
                 <div>
 

@@ -61,5 +61,33 @@ class Group extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+    public function isChairperson($userId = null)
+        {
+            $userId = $userId ?: auth()->id();
+
+            return $this->members()
+                ->where('user_id', $userId)
+                ->wherePivot('role', 'chairperson')
+                ->exists();
+        }
+    public function isLeader($userId = null)
+            {
+                $userId = $userId ?: auth()->id();
+
+                return $this->members()
+                    ->where('user_id', $userId)
+                    ->wherePivotIn('role', [
+                        'chairperson',
+                        'secretary',
+                        'treasurer'
+                    ])
+                    ->exists();
+        }
+    public function updates()
+{
+    return $this->hasMany(
+        GroupUpdate::class
+    );
+}
     
 }

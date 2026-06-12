@@ -32,19 +32,7 @@
 
         </div>
 
-        <div class="mb-4">
-
-            <label class="block mb-2">
-                Phone Number
-            </label>
-
-            <input
-                type="text"
-                name="phone_number"
-                class="w-full border rounded p-3"
-                required>
-
-        </div>
+        
 
         <div class="mb-4">
 

@@ -42,29 +42,39 @@
         </div>
 
         {{-- Group Switcher --}}
-        @if($groups->count())
-            <div class="px-4 pb-4">
+@if($groups->count())
 
-                <select
-                    onchange="window.location.href=this.value"
-                    class="w-full rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-300">
+<div class="px-3 pb-4">
 
-                    @foreach($groups as $userGroup)
+    <div class="rounded-lg bg-[#243550] border border-[#2A3F58] overflow-hidden">
 
-                        <option
-                            value="{{ route('groups.switch', $userGroup->id) }}"
-                            {{ $group->id == $userGroup->id ? 'selected' : '' }}>
+        <select
+            id="groupSwitcher"
+            class="w-full  bg-[#243550]  px-3 py-2.5 text-sm text-white focus:outline-none">
 
-                            {{ $userGroup->name }}
+            @foreach($groups as $userGroup)
+                <option
+                    value="{{ route('groups.switch', $userGroup->id) }}"
+                    {{ $group->id == $userGroup->id ? 'selected' : '' }}>
+                    {{ $userGroup->name }}
+                </option>
+            @endforeach
 
-                        </option>
+            <option disabled>─────────────</option>
+            <option value="{{ route('groups.create') }}">
+                ➕ Create New Group
+            </option>
+            <option value="{{ route('groups.join') }}">
+                🤝 Join Existing Group
+            </option>
 
-                    @endforeach
+        </select>
 
-                </select>
+    </div>
 
-            </div>
-        @endif
+</div>
+
+@endif
 
         <div class="mx-4 border-t border-[#2A3F58]"></div>
 
@@ -75,7 +85,7 @@
                 href="{{ route('dashboard') }}"
                 class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
                 {{ request()->routeIs('dashboard')
-                    ? 'bg-[#2563EB] text-white font-semibold'
+                    ? 'bg-emerald-400 text-white font-semibold'
                     : 'text-[#b0c4d8] hover:bg-[#243550] hover:text-white' }}">
 
                 Dashboard
@@ -83,7 +93,7 @@
             </a>
 
             <a
-                href="#"
+                href="{{ route('payments.index') }}"
                 class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
                 {{ request()->routeIs('payments.*')
                     ? 'bg-[#2563EB] text-white font-semibold'
@@ -115,16 +125,20 @@
 
             </a>
 
-            <a
-                href="{{ route('groups.settings') }}"
-                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
-                {{ request()->routeIs('groups.settings')
-                    ? 'bg-[#2563EB] text-white font-semibold'
-                    : 'text-[#b0c4d8] hover:bg-[#243550] hover:text-white' }}">
+            @if($group->isChairperson())
 
-                Settings
+    <a
+        href="{{ route('groups.settings') }}"
+        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
+        {{ request()->routeIs('groups.settings')
+            ? 'bg-[#2563EB] text-white font-semibold'
+            : 'text-[#b0c4d8] hover:bg-[#243550] hover:text-white' }}">
 
-            </a>
+        Settings
+
+    </a>
+
+@endif
 
         </nav>
 
@@ -147,7 +161,7 @@
         <div class="space-y-1 px-4 pb-6">
 
             <a
-                href="#"
+                href="{{ route('help-center') }}"
                 class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#b0c4d8] transition hover:bg-[#243550] hover:text-white">
 
                 Help Center
@@ -208,6 +222,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
     const button = document.getElementById('menuButton');
+    const groupSwitcher = document.getElementById('groupSwitcher');
+
+groupSwitcher?.addEventListener('change', function () {
+    window.location.href = this.value;
+});
 
     button?.addEventListener('click', () => {
 
@@ -220,6 +239,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         sidebar.classList.add('-translate-x-full');
         overlay.classList.add('hidden');
+
+    });
+    groupSwitcher?.addEventListener('change', function () {
+
+        window.location.href = this.value;
 
     });
 

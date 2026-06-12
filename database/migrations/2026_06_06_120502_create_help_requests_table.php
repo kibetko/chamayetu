@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-      Schema::create('group_join_requests', function (Blueprint $table) {
+        Schema::create('help_requests', function (Blueprint $table) {
 
     $table->id();
 
@@ -23,23 +23,19 @@ return new class extends Migration
           ->constrained()
           ->cascadeOnDelete();
 
-    
+    $table->string('name');
 
-    $table->text('message')->nullable();
+    $table->string('phone');
+
+    $table->string('subject');
+
+    $table->text('issue');
 
     $table->enum('status', [
-        'pending',
-        'approved',
-        'rejected'
-    ])->default('pending');
-
-    $table->foreignId('reviewed_by')
-          ->nullable()
-          ->constrained('users')
-          ->nullOnDelete();
-
-    $table->timestamp('reviewed_at')
-          ->nullable();
+        'open',
+        'in_progress',
+        'resolved'
+    ])->default('open');
 
     $table->timestamps();
 });
@@ -50,6 +46,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('group_join_requests');
+        Schema::dropIfExists('help_requests');
     }
 };

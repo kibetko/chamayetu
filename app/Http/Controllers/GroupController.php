@@ -49,7 +49,7 @@ class GroupController extends Controller
     {
         $validated = $request->validate([
             'group_code' => 'required|string',
-            'phone_number' => 'required|string|max:20',
+            
             'message' => 'nullable|string|max:500',
         ]);
 

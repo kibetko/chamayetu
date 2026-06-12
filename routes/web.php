@@ -4,6 +4,10 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\HelpCenterController;
+use App\Http\Controllers\GroupUpdateController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\MpesaController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -78,5 +82,36 @@ Route::post(
     '/group/settings',
     [GroupController::class, 'updateSettings']
 )->name('groups.settings.update');
+
+Route::get(
+    '/help-center',
+    [HelpCenterController::class, 'index']
+)->name('help-center');
+
+Route::post(
+    '/help-center/contact',
+    [HelpCenterController::class, 'storeRequest']
+)->name('help-center.contact');
+Route::post(
+    '/group-updates',
+    [GroupUpdateController::class, 'store']
+)->name('group-updates.store');
+
+Route::get(
+    '/payments',
+    [PaymentController::class, 'index']
+)->name('payments.index');
+
+Route::post(
+    '/payments/stk-push',
+    [MpesaController::class, 'stkPush']
+)->name('mpesa.stk');
+
+Route::post(
+    '/payments/callback',
+    [MpesaController::class, 'callback']
+)->name('mpesa.callback');
+
+
 
 require __DIR__.'/auth.php';
