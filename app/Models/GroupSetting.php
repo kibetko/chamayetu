@@ -17,7 +17,8 @@ class GroupSetting extends Model
     'late_penalty_type',
     'minimum_contribution',
     'maximum_loan_multiplier',
-    'updated_by'
+    'updated_by',
+    'contribution_due_day',
 ];
     protected $guarded = [];
 

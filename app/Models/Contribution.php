@@ -21,8 +21,11 @@ class Contribution extends Model
     {
         return $this->belongsTo(Group::class);
     }
-    public function transaction()
+    public function mpesaTransaction()
 {
-    return $this->belongsTo(MpesaTransaction::class);
+    return $this->belongsTo(
+        MpesaTransaction::class,
+        'mpesa_transaction_id'
+    );
 }
 }

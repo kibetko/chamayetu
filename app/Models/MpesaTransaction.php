@@ -9,7 +9,10 @@ class MpesaTransaction extends Model
     protected $guarded = [];
 
     public function contribution()
-{
-    return $this->hasOne(Contribution::class);
-}
+    {
+        return $this->hasOne(
+            Contribution::class,
+            'mpesa_transaction_id'
+        );
+    }
 }

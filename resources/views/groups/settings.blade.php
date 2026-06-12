@@ -21,6 +21,7 @@
                 </p>
 
             </div>
+            
 
             <form
                 method="POST"
@@ -37,6 +38,23 @@
                     </h3>
 
                     <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Contribution Due Day
+                </label>
+
+                <input
+                    type="number"
+                    name="contribution_due_day"
+                    min="1"
+                    max="31"
+                    value="{{ $group->settings?->contribution_due_day }}"
+                    class="w-full rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+
+                <p class="text-xs text-gray-500 mt-1">
+                    Day of the month contributions must be paid.
+                </p>
+            </div>
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">

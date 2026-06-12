@@ -104,13 +104,13 @@ class GroupController extends Controller
                 ]);
         }
 
-        GroupJoinRequest::create([
-            'group_id' => $group->id,
-            'user_id' => auth()->id(),
-            'phone_number' => $validated['phone_number'],
-            'message' => $validated['message'],
-            'status' => 'pending'
-        ]);
+GroupJoinRequest::create([
+    'group_id' => $group->id,
+    'user_id' => auth()->id(),
+    'phone_number' => auth()->user()->phone_no,
+    'message' => $validated['message'],
+    'status' => 'pending'
+]);
 
         return back()->with(
             'success',
@@ -265,6 +265,12 @@ class GroupController extends Controller
         );
 
         $validated = $request->validate([
+            'contribution_due_day' => [
+        'required',
+        'integer',
+        'min:1',
+        'max:31'
+    ],
             'interest_rate' =>
                 'nullable|numeric|min:0',
 
@@ -306,6 +312,7 @@ class GroupController extends Controller
                     'group_id' => $group->id
                 ],
                 [
+                    'contribution_due_day' => $request->contribution_due_day,
                     'interest_rate' => $validated['interest_rate'] ?? null,
                     'repayment_period_days' => $validated['repayment_period_days'] ?? null,
                     'grace_period_days' => $validated['grace_period_days'] ?? null,

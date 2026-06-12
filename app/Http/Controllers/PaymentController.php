@@ -20,7 +20,7 @@ class PaymentController extends Controller
 
         $payments = Contribution::with([
     'user',
-    'transaction'
+    'mpesaTransaction'
 ])
 ->where('group_id', $groupId)
 ->orderByDesc('paid_at')
@@ -29,10 +29,65 @@ class PaymentController extends Controller
     return $payment->paid_at->format('d M Y');
 });
 
-        $totalContributions = Contribution::where(
-            'group_id',
-            $groupId
-        )->sum('amount');
+        $userId = auth()->id();
+        $settings = $group->settings;
+        $minimum = $settings?->minimum_contribution ?? 0;
+$penaltyAmount = $settings?->late_penalty_amount ?? 0;
+$penaltyType = $settings?->late_penalty_type ?? 'fixed';
+$totalContributions = Contribution::where('group_id', $groupId)
+    ->where('user_id', $userId)
+    ->sum('amount');
+
+        $minimumContribution = $minimum;
+    $group->settings?->minimum_contribution ?? 0;
+
+$dueDay =
+    $group->settings?->contribution_due_day ?? 30;
+
+$paidThisMonth = Contribution::where(
+        'group_id',
+        $groupId
+    )
+    ->where('user_id', auth()->id())
+    ->whereMonth('paid_at', now()->month)
+    ->whereYear('paid_at', now()->year)
+    ->sum('amount');
+
+$remainingThisMonth = max(
+    0,
+    $minimumContribution - $paidThisMonth
+);
+
+$dueDate = now()->copy()->day(
+    min($dueDay, now()->daysInMonth)
+);
+
+if (now()->greaterThan($dueDate)) {
+    $dueDate = $dueDate->addMonth();
+}
+$dueDate = now()->copy()->day($dueDay);
+
+if ($dueDate->isPast()) {
+    $dueDate->addMonth();
+}
+
+$isOverdue = now()->gt($dueDate);
+
+$penalty = 0;
+
+if ($isOverdue && $paidThisMonth < $minimum) {
+
+    $shortfall = $minimum - $paidThisMonth;
+
+    if ($penaltyType === 'percentage') {
+        $penalty = ($shortfall * $penaltyAmount) / 100;
+    } else {
+        $penalty = $penaltyAmount;
+    }
+}
+$remainingThisMonth = max($minimum - $paidThisMonth, 0);
+
+$daysRemaining = now()->diffInDays($dueDate);
 
         $thisMonth = Contribution::where(
             'group_id',
@@ -45,12 +100,17 @@ class PaymentController extends Controller
         return view(
             'payments.index',
             compact(
-                'group',
-                'groups',
-                'payments',
-                'totalContributions',
-                'thisMonth'
-            )
+    'group',
+    'groups',
+    'payments',
+    'totalContributions',
+    'thisMonth',
+    'paidThisMonth',
+    'remainingThisMonth',
+    'dueDate',
+    'daysRemaining',
+    'penalty'
+)
         );
     }
 }
