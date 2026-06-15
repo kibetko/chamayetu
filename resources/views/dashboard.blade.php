@@ -2,7 +2,7 @@
     :group="$group"
     :groups="$groups">
 
-<div class="flex h-screen bg-gray-100">
+<div class="flex h-screen bg-[#F3F7F5]">
 
     <!-- Mobile Overlay -->
     <div
@@ -10,382 +10,349 @@
         class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden">
     </div>
 
-    <!-- Sidebar -->
-    
-
     <!-- Main -->
-    <main class="flex-1 overflow-y-auto">
+    <main class="flex-1 overflow-y-auto p-6">
 
-        <!-- Header -->
-        <div class="bg-white shadow p-4 flex items-center justify-between">
-
-            <div class="flex items-center gap-3">
-
-                
-
-                <div>
-
-                    <h2 class="text-2xl font-bold">
-                        {{ $group->name }}
-                    </h2>
-
-                    <p class="text-gray-500">
-                        {{ $group->description }}
-                    </p>
-
-                </div>
-
+        <!-- Top header -->
+        <div class="mb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-[#0f3a2b]">Dashboard Overview</h1>
+                <p class="text-sm text-gray-600 mt-1">Welcome back, {{ Auth::user()->name }}</p>
             </div>
 
-            <div class="flex items-center">
-    <x-dropdown align="right" width="48">
-        <x-slot name="trigger">
-            <button class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white rounded-md">
-                <div>{{ Auth::user()->name }}</div>
+            {{-- Profile link --}}
+            <div>
+                <a href="{{ route('profile.edit') }}" class="inline-flex items-center gap-3 rounded-full px-3 py-1 hover:bg-white/50">
+                    <div class="h-9 w-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold">
+                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                    </div>
+                    
+                </a>
+            </div>
+        </div>
 
-                <div class="ms-1">
-                    <svg class="fill-current h-4 w-4" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                            clip-rule="evenodd" />
-                    </svg>
+        <!-- Stat cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl shadow-sm p-4 border border-green-50">
+                <div class="text-xs text-gray-500">Total Group Contributions</div>
+                <div class="mt-3 text-2xl font-semibold text-[#063a2a]">
+                    KES {{ number_format($stats['contributions']) }}
                 </div>
-            </button>
-        </x-slot>
+            </div>
 
-        <x-slot name="content">
-            <x-dropdown-link :href="route('profile.edit')">
-                Profile
-            </x-dropdown-link>
+            <div class="bg-white rounded-xl shadow-sm p-4 border border-green-50">
+                <div class="text-xs text-gray-500">My Contribution Summary</div>
+                <div class="mt-3 text-2xl font-semibold text-[#063a2a]">
+                    KES 0
+                </div>
+            </div>
 
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
+            <div class="bg-white rounded-xl shadow-sm p-4 border border-green-50">
+                <div class="text-xs text-gray-500">Total Loans Issued</div>
+                <div class="mt-3 text-2xl font-semibold text-[#063a2a]">
+                    KES {{ number_format($loanStats['total_loaned']) }}
+                </div>
+            </div>
 
-                <x-dropdown-link
-                    :href="route('logout')"
-                    onclick="event.preventDefault(); this.closest('form').submit();">
-                    Log Out
-                </x-dropdown-link>
-            </form>
-        </x-slot>
-    </x-dropdown>
-</div>
+            <div class="bg-white rounded-xl shadow-sm p-4 border border-green-50">
+                <div class="text-xs text-gray-500">Outstanding Loan Balances</div>
+                <div class="mt-3 text-2xl font-semibold text-[#063a2a]">
+                    KES {{ number_format($loanStats['outstanding']) }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content: loan health + recent activity -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+
+            <!-- Loan Health -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-green-50">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-[#063a2a]">Loan Health</h3>
+                        <p class="text-sm text-gray-500 mt-1">Portfolio repayment overview</p>
+                    </div>
+                    <div class="text-sm text-gray-500">KES {{ number_format($loanStats['outstanding']) }}</div>
+                </div>
+
+                <div class="mt-6 flex items-center gap-6">
+                    <div class="w-36 h-36">
+                        <canvas id="donutHealth"></canvas>
+                    </div>
+
+                    <div class="flex-1">
+                        <div class="text-sm text-gray-600">Active / Paid</div>
+                        <div class="mt-4 text-sm text-gray-600">Defaulted</div>
+
+                        <div class="mt-6">
+                            <div class="text-xs text-gray-500">Healthy</div>
+                            <div class="text-2xl font-bold text-[#063a2a]">{{ number_format($recoveryRate,1) }}%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Group Activity -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-green-50">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-[#063a2a]">Recent Group Activity</h3>
+                    <a href="#" class="text-sm text-emerald-600">View All →</a>
+                </div>
+
+                <div class="mt-4 divide-y">
+                    @php
+                        // Fallback activity using recent join requests and top borrowers
+                        $activities = collect();
+
+                        // recent join requests (if any)
+                        $group->joinRequests()->latest()->take(3)->get()->each(function($r) use (&$activities){
+                            $activities->push([
+                                'member' => $r->user->name,
+                                'type' => 'Join Request',
+                                'amount' => null,
+                                'status' => ucfirst($r->status),
+                                'date' => $r->created_at->toDateString(),
+                            ]);
+                        });
+
+                        // top borrowers as loan requests placeholder
+                        $topBorrowers->take(3)->each(function($b) use (&$activities){
+                            $activities->push([
+                                'member' => $b->user->name,
+                                'type' => 'Loan',
+                                'amount' => $b->total_borrowed,
+                                'status' => 'Completed',
+                                'date' => null,
+                            ]);
+                        });
+                    @endphp
+
+                    @if($activities->isEmpty())
+                        <div class="py-6 text-gray-500">No recent activity.</div>
+                    @else
+                        @foreach($activities as $act)
+                            <div class="py-3 flex items-center justify-between">
+                                <div>
+                                    <div class="font-semibold text-sm">{{ $act['member'] }}</div>
+                                    <div class="text-xs text-gray-500">{{ $act['type'] }}</div>
+                                </div>
+
+                                <div class="text-right">
+                                    <div class="text-sm @if($act['amount']) text-red-600 font-semibold @else text-gray-500 @endif">
+                                        @if($act['amount']) KES {{ number_format($act['amount']) }} @else — @endif
+                                    </div>
+                                    <div class="text-xs mt-1">
+                                        <span class="px-2 py-0.5 rounded-full text-xs bg-{{ strtolower($act['status']) === 'pending' ? 'yellow' : 'green' }}-100 text-{{ strtolower($act['status']) === 'pending' ? 'yellow' : 'green' }}-700">
+                                            {{ $act['status'] }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    @endif
+                </div>
+            </div>
 
         </div>
 
-        <!-- Content -->
-        <div class="p-6">
+        <!-- Lower controls: stats grid + chairperson control room -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
 
-            <!-- Stats -->
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-
-                <div class="bg-white rounded-xl shadow p-6">
-                    <h3 class="text-gray-500">Members</h3>
-                    <p class="text-3xl font-bold text-blue-600 mt-2">
-                        {{ $stats['members'] }}
-                    </p>
+            <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-green-50">
+                    <h4 class="text-gray-500">Total Loaned</h4>
+                    <div class="mt-3 text-2xl font-bold text-blue-600">KES {{ number_format($loanStats['total_loaned']) }}</div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow p-6">
-                    <h3 class="text-gray-500">Total Contributions</h3>
-                    <p class="text-3xl font-bold text-green-600 mt-2">
-                        KES {{ number_format($stats['contributions']) }}
-                    </p>
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-green-50">
+                    <h4 class="text-gray-500">Total Repaid</h4>
+                    <div class="mt-3 text-2xl font-bold text-green-600">KES {{ number_format($loanStats['total_repaid']) }}</div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow p-6">
-                    <h3 class="text-gray-500">Active Loans</h3>
-                    <p class="text-3xl font-bold text-orange-600 mt-2">
-                        {{ $stats['active_loans'] }}
-                    </p>
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-green-50">
+                    <h4 class="text-gray-500">Outstanding</h4>
+                    <div class="mt-3 text-2xl font-bold text-orange-600">KES {{ number_format($loanStats['outstanding']) }}</div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow p-6">
-                    <h3 class="text-gray-500">Join Requests</h3>
-                    <p class="text-3xl font-bold text-red-600 mt-2">
-                        {{ $stats['pending_requests'] }}
-                    </p>
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-green-50">
+                    <h4 class="text-gray-500">Recovery Rate</h4>
+                    <div class="mt-3 text-2xl font-bold text-purple-600">{{ number_format($recoveryRate,1) }}%</div>
                 </div>
-
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mt-6">
 
-    <div class="bg-white rounded-xl shadow p-6">
-        <h3 class="text-gray-500">Total Loaned</h3>
+            @if($group->isChairperson())
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-green-50">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-semibold text-[#063a2a]">Chairperson Control Room</h3>
+                    <span class="text-xs text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">Admin Controls Active</span>
+                </div>
 
-        <p class="text-3xl font-bold text-blue-600 mt-2">
-            KES {{ number_format($loanStats['total_loaned']) }}
-        </p>
-    </div>
+                <p class="text-sm text-gray-500 mt-2">Update interest rates and grace periods for this group.</p>
 
-    <div class="bg-white rounded-xl shadow p-6">
-        <h3 class="text-gray-500">Total Repaid</h3>
+                <form method="POST" action="{{ route('groups.settings.update', $group->id) }}" class="mt-4 space-y-3">
+                    @csrf
+                    <div>
+                        <label class="text-xs text-gray-600">Loan Interest Rate (%)</label>
+                        <input name="interest_rate" value="{{ old('interest_rate', $group->interest_rate ?? 5) }}" class="mt-1 w-full border border-green-50 rounded px-3 py-2" />
+                    </div>
 
-        <p class="text-3xl font-bold text-green-600 mt-2">
-            KES {{ number_format($loanStats['total_repaid']) }}
-        </p>
-    </div>
+                    <div>
+                        <label class="text-xs text-gray-600">Grace Period (days)</label>
+                        <input name="grace_period" value="{{ old('grace_period', $group->grace_period ?? 14) }}" class="mt-1 w-full border border-green-50 rounded px-3 py-2" />
+                    </div>
 
-    <div class="bg-white rounded-xl shadow p-6">
-        <h3 class="text-gray-500">Outstanding Balance</h3>
+                    <button type="submit" class="w-full mt-2 bg-emerald-600 text-white py-2 rounded">Approve Settings Override</button>
+                </form>
+            </div>
+            @endif
 
-        <p class="text-3xl font-bold text-orange-600 mt-2">
-            KES {{ number_format($loanStats['outstanding']) }}
-        </p>
-    </div>
+            @if($group->isChairperson())
 
-    <div class="bg-white rounded-xl shadow p-6">
-        <h3 class="text-gray-500">Recovery Rate</h3>
+<div class="bg-white rounded-xl shadow-sm p-6 border border-green-50 mt-6">
 
-        <p class="text-3xl font-bold text-purple-600 mt-2">
-            {{ number_format($recoveryRate, 1) }}%
-        </p>
-    </div>
+    <div class="flex items-center justify-between mb-4">
 
-</div>
-<div class="bg-white rounded-xl shadow mt-8">
-
-    <div class="p-4 border-b">
-        <h3 class="font-bold">
-            Top Borrowers
+        <h3 class="font-semibold text-[#063a2a]">
+            Membership Approval Queue
         </h3>
+
+        <span class="text-xs bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full">
+            {{ $pendingRequests->count() }} Pending
+        </span>
+
     </div>
 
-    <div class="p-4">
+    @forelse($pendingRequests as $request)
 
-        @forelse($topBorrowers as $borrower)
+        <div class="border-b py-4 flex justify-between items-center">
 
-            <div class="flex justify-between py-3 border-b">
+            <div>
 
-                <span>
-                    {{ $borrower->user->name }}
-                </span>
+                <h4 class="font-semibold">
+                    {{ $request->user->name }}
+                </h4>
 
-                <span class="font-semibold text-blue-600">
-                    KES {{ number_format($borrower->total_borrowed) }}
-                </span>
+                <p class="text-sm text-gray-500">
+                    {{ $request->user->email }}
+                </p>
+
+                @if($request->message)
+                    <p class="text-sm mt-2 italic text-gray-600">
+                        "{{ $request->message }}"
+                    </p>
+                @endif
 
             </div>
 
-        @empty
+            <div class="flex gap-2">
 
-            <p class="text-gray-500">
-                No loans recorded yet.
-            </p>
+                <form
+                    action="{{ route('join-requests.approve', $request) }}"
+                    method="POST">
 
-        @endforelse
+                    @csrf
 
-    </div>
+                    <button
+                        class="bg-green-600 text-white px-4 py-2 rounded-lg">
 
-</div>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                        Approve
 
-    <div class="bg-white rounded-xl shadow p-6">
+                    </button>
 
-        <h3 class="text-gray-500">
-            Active Loans
-        </h3>
+                </form>
 
-        <p class="text-3xl font-bold text-blue-600 mt-2">
-            {{ $loanStats['active_loans'] }}
-        </p>
+                <form
+                    action="{{ route('join-requests.reject', $request) }}"
+                    method="POST">
 
-    </div>
+                    @csrf
 
-    <div class="bg-white rounded-xl shadow p-6">
+                    <button
+                        class="bg-red-600 text-white px-4 py-2 rounded-lg">
 
-        <h3 class="text-gray-500">
-            Completed Loans
-        </h3>
+                        Reject
 
-        <p class="text-3xl font-bold text-green-600 mt-2">
-            {{ $loanStats['completed_loans'] }}
-        </p>
+                    </button>
 
-    </div>
-
-    <div class="bg-white rounded-xl shadow p-6">
-
-        <h3 class="text-gray-500">
-            Overdue Loans
-        </h3>
-
-        <p class="text-3xl font-bold text-red-600 mt-2">
-            {{ $loanStats['overdue_loans'] }}
-        </p>
-
-    </div>
-
-</div>
-
-<div class="bg-white rounded-xl shadow mt-8">
-
-    <div class="p-4 border-b">
-        <h3 class="font-bold">
-            Monthly Loan Disbursements
-        </h3>
-    </div>
-
-    <div class="p-4">
-        <canvas id="loanChart"></canvas>
-    </div>
-
-</div>
-            
-
-            <!-- Activity + Requests -->
-            <div class="grid lg:grid-cols-2 gap-6 mt-8">
-
-                <!-- Activity -->
-                <div class="bg-white rounded-xl shadow">
-
-                    <div class="p-4 border-b">
-                        <h3 class="font-bold">
-                            Recent Activity
-                        </h3>
-                    </div>
-
-                    <div class="p-4">
-                        No activity yet.
-                    </div>
-
-                </div>
-
-                <!-- Pending Requests -->
-                <div class="bg-white rounded-xl shadow">
-
-                    <div class="p-4 border-b">
-                        <h3 class="font-bold">
-                            Pending Requests
-                        </h3>
-                    </div>
-
-                    <div class="p-4">
-                        @php
-
-                        $currentMember = $group->members
-                            ->where(
-                                'user_id',
-                                auth()->id()
-                            )
-                            ->first();
-
-                        @endphp
-                        @php
-                        $isChairperson =
-                            $currentMember &&
-                            $currentMember->role === 'chairperson';
-                        @endphp
-
-                        @forelse(
-                            $group->joinRequests()
-                                ->where('status','pending')
-                                ->latest()
-                                ->get()
-                            as $request
-                        )
-
-                            <div class="border-b py-3">
-
-                                <div class="flex justify-between items-center">
-
-                                    <div>
-
-                                        <p class="font-semibold">
-                                            {{ $request->user->name }}
-                                        </p>
-
-                                        <p class="text-sm text-gray-500">
-                                            {{ $request->phone_number }}
-                                        </p>
-
-                                        @if($request->message)
-                                            <p class="text-sm text-gray-600 mt-1">
-                                                {{ $request->message }}
-                                            </p>
-                                        @endif
-
-                                    </div>
-
-                                    <div class="flex gap-2">
-
-                                        <form
-                                            method="POST"
-                                            action="{{ route('join-requests.approve', $request->id) }}">
-
-                                            @csrf
-
-                                            <button
-                                                type="submit"
-                                                class="bg-green-600 text-white px-3 py-1 rounded">
-
-                                                Approve
-
-                                            </button>
-
-                                        </form>
-
-                                        <form
-                                            method="POST"
-                                            action="{{ route('join-requests.reject', $request->id) }}">
-
-                                            @csrf
-
-                                            <button
-                                                type="submit"
-                                                class="bg-red-600 text-white px-3 py-1 rounded">
-
-                                                Reject
-
-                                            </button>
-
-                                        </form>
-
-                                        </div>
-
-                                        </div>
-
-                                            @empty
-
-                                                <p class="text-gray-500">
-                                                    No pending requests
-                                                </p>
-
-                                            @endforelse
-
-                        </div>
-
-                    </div>
-
-                </div>
+                </form>
 
             </div>
+
+        </div>
+
+    @empty
+
+        <div class="py-8 text-center text-gray-500">
+
+            No pending membership requests.
+
+        </div>
+
+    @endforelse
+
+</div>
+
+@endif
+
+        </div>
+
+        <!-- Chart area -->
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-green-50 mt-6">
+            <h3 class="font-semibold text-[#063a2a]">Monthly Loan Disbursements</h3>
+            <div class="mt-4">
+                <canvas id="loanChart"></canvas>
+            </div>
+        </div>
 
     </main>
 
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-const ctx = document.getElementById('loanChart');
+document.addEventListener('DOMContentLoaded', () => {
+    // Donut (loan health) uses recoveryRate
+    const donutCtx = document.getElementById('donutHealth').getContext('2d');
+    const healthy = Number(@json($recoveryRate)) || 0;
+    new Chart(donutCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Healthy', 'At Risk'],
+            datasets: [{
+                data: [healthy, Math.max(0, 100 - healthy)],
+                backgroundColor: ['#10B981', '#E5E7EB'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            cutout: '75%',
+            plugins: {
+                tooltip: { enabled: false },
+                legend: { display: false },
+            }
+        }
+    });
 
-new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: @json($monthlyLoans->pluck('month')),
-        datasets: [{
-            label: 'Loan Amount',
-            data: @json($monthlyLoans->pluck('total')),
-            borderWidth: 3,
-            tension: 0.3
-        }]
-    },
-    options: {
-        responsive: true
-    }
+    // Loan line chart
+    const ctx = document.getElementById('loanChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: @json($monthlyLoans->pluck('month')),
+            datasets: [{
+                label: 'Loan Amount',
+                data: @json($monthlyLoans->pluck('total')),
+                borderWidth: 3,
+                borderColor: '#16A34A',
+                backgroundColor: 'rgba(16,163,74,0.08)',
+                tension: 0.35,
+                fill: true
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
 });
 </script>
-
-
 
 </x-layouts.group>

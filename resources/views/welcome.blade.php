@@ -1,265 +1,998 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChamaYetu</title>
+    <title>ChamaYetu - Smart Chama Management</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        teal: '#1B424C',
-                        green: '#39C260',
-                    },
                     fontFamily: {
-                        sans: ['DM Sans', 'sans-serif'],
-                        serif: ['Playfair Display', 'serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#0f172a',
+                        accent: '#14b8a6',
                     }
                 }
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .glass {
+            backdrop-filter: blur(12px);
+            background: rgba(255,255,255,0.75);
+        }
+
+        .hero-bg {
+            background:
+                radial-gradient(circle at top left,#60a5fa 0%,transparent 40%),
+                radial-gradient(circle at bottom right,#14b8a6 0%,transparent 40%);
+        }
+        @keyframes flow {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.animate-flow {
+    animation: flow 6s linear infinite;
+    width: 200%;
+    opacity: 0.8;
+}
+
+@keyframes flowNodes {
+    0% {
+        transform: translateX(-20%);
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(20%);
+        opacity: 0.6;
+    }
+}
+
+.animate-flow-nodes {
+    animation: flowNodes 6s ease-in-out infinite;
+}
+    </style>
 </head>
-<body class="font-sans bg-white text-gray-900">
+
+<body class="bg-slate-50 text-slate-800 font-sans">
 
 <!-- NAVBAR -->
-<nav class="sticky top-0 z-50 bg-white shadow-xs px-16 h-16 flex items-center justify-between gap-4 ">
-    <div class="flex items-center ">
-        <span class="text-2xl font-bold text-teal">Chama</span>
-        <span class="text-2xl font-bold text-green">Yetu</span>
+<nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+
+        <div class="flex items-center justify-between h-20">
+
+            <div class="flex items-center gap-2">
+
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500"></div>
+
+                <span class="font-extrabold text-2xl">
+                    Chama<span class="text-blue-600">Yetu</span>
+                </span>
+
+            </div>
+
+            <div class="hidden lg:flex items-center gap-8">
+
+                <a href="#features" class="hover:text-blue-600 transition">
+                    Features
+                </a>
+
+                <a href="#how-it-works" class="hover:text-blue-600 transition">
+                    How It Works
+                </a>
+
+                <a href="#testimonials" class="hover:text-blue-600 transition">
+                    Testimonials
+                </a>
+
+                <a href="#faq" class="hover:text-blue-600 transition">
+                    FAQ
+                </a>
+
+            </div>
+
+            <div class="flex gap-3">
+
+                <a href="/login"
+                   class="px-5 py-2 border border-slate-300 rounded-xl hover:bg-slate-100 transition">
+                    Login
+                </a>
+
+                <a href="/register"
+                   class="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">
+                    Get Started
+                </a>
+
+            </div>
+
+        </div>
+
     </div>
 
-    <ul class="hidden md:flex items-center gap-8 list-none">
-        <li><a href="#home" class="text-gray-800 font-medium hover:text-teal transition-colors">Home</a></li>
-        <li><a href="#services" class="text-gray-800 font-medium hover:text-teal transition-colors">Services</a></li>
-        <li><a href="#how-it-works" class="text-gray-800 font-medium hover:text-teal transition-colors">How we work?</a></li>
-        <li><a href="#about" class="text-gray-800 font-medium hover:text-teal transition-colors">About Us</a></li>
-    </ul>
-
-    <div class="hidden md:flex items-center gap-3">
-        <a href="/login" class="px-5 py-1.5 rounded-full border-2 border-teal text-teal font-semibold text-sm hover:bg-teal hover:text-white transition-all">Login</a>
-        <a href="#contact" class="px-5 py-1.5 rounded-full bg-teal text-white font-semibold text-sm hover:bg-opacity-90 transition-all">Contact us</a>
-    </div>
-
-    <button id="menu-btn" class="md:hidden text-2xl bg-transparent border-none cursor-pointer">☰</button>
 </nav>
 
-<!-- MOBILE MENU -->
-<div id="mobile-menu" class="hidden flex-col gap-4 px-6 py-4 bg-white border-t border-gray-100 md:hidden">
-    <a href="#home" class="text-gray-800 font-medium">Home</a>
-    <a href="#services" class="text-gray-800 font-medium">Services</a>
-    <a href="#how-it-works" class="text-gray-800 font-medium">How we work?</a>
-    <a href="#about" class="text-gray-800 font-medium">About Us</a>
-    <a href="/login" class="text-teal font-semibold">Login</a>
-    <a href="#contact" class="bg-teal text-white px-4 py-2 rounded-full text-center font-semibold">Contact us</a>
-</div>
-
 <!-- HERO -->
-<section id="home" class="flex flex-col md:flex-row items-center justify-between gap-10 md:gap-40 px-16 py-20 bg-gray-50">
-    <div class="max-w-xl">
-        <h2 class="font-serif text-3xl xl:text-5xl leading-tight text-gray-900">
-            Quick and Easy Loans for Your Financial Needs.
-        </h2>
-        <p class="mt-5 text-base text-gray-500 leading-relaxed">
-            Our loan services offer a hassle-free and streamlined borrowing experience, providing you with the funds you need in a timely manner to meet your financial requirements.
+<section class="pt-36 pb-24 hero-bg">
+
+    <div class="max-w-7xl mx-auto px-6">
+
+        <div class="grid lg:grid-cols-2 gap-16 items-center">
+
+            <div>
+
+                <span class="inline-flex px-4 py-2 rounded-full bg-blue-100 text-blue-700 font-medium">
+                    Smart Chama Management Platform
+                </span>
+
+                <h1 class="text-5xl lg:text-7xl font-black leading-tight mt-6">
+
+                    Manage Your
+                    <span class="text-blue-600">
+                        Chama
+                    </span>
+
+                    The Modern Way
+
+                </h1>
+
+                <p class="mt-8 text-xl text-slate-600 leading-relaxed">
+
+                    Track contributions, manage loans, approve members,
+                    monitor repayments, and grow your savings group —
+                    all from one powerful platform.
+
+                </p>
+
+                <div class="flex flex-wrap gap-4 mt-10">
+
+                    <a href="/register"
+                       class="px-8 py-4 bg-blue-600 text-white rounded-2xl font-semibold hover:bg-blue-700 transition shadow-lg">
+
+                        Create Free Account
+
+                    </a>
+
+                    <a href="#features"
+                       class="px-8 py-4 bg-white rounded-2xl border border-slate-300 font-semibold hover:bg-slate-100 transition">
+
+                        Explore Features
+
+                    </a>
+
+                </div>
+
+            </div>
+
+            <div>
+
+                <div class="bg-white rounded-3xl shadow-2xl p-8">
+
+                    <div class="grid grid-cols-2 gap-4">
+
+                        <div class="bg-blue-50 p-6 rounded-2xl">
+                            <p class="text-sm text-slate-500">Members</p>
+                            <h3 class="text-3xl font-bold mt-2">250+</h3>
+                        </div>
+
+                        <div class="bg-teal-50 p-6 rounded-2xl">
+                            <p class="text-sm text-slate-500">Loans Issued</p>
+                            <h3 class="text-3xl font-bold mt-2">KES 5M+</h3>
+                        </div>
+
+                        <div class="bg-purple-50 p-6 rounded-2xl">
+                            <p class="text-sm text-slate-500">Contributions</p>
+                            <h3 class="text-3xl font-bold mt-2">KES 20M+</h3>
+                        </div>
+
+                        <div class="bg-green-50 p-6 rounded-2xl">
+                            <p class="text-sm text-slate-500">Groups</p>
+                            <h3 class="text-3xl font-bold mt-2">100+</h3>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="py-10 bg-white border-y border-slate-200">
+
+    <div class="max-w-7xl mx-auto px-6">
+
+        <p class="text-center text-sm uppercase tracking-widest text-slate-500 mb-8">
+            Trusted by savings groups across Kenya
         </p>
-        <a href="/register" class="inline-block mt-8 bg-white text-teal font-semibold  px-7 py-3 rounded-3xl hover:bg-opacity-90 transition-all border-2 border-teal">
-            Get started
-        </a>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+
+            <div class="bg-slate-50 rounded-2xl p-6 text-center">
+                🔒
+                <p class="font-semibold mt-2">Secure Data</p>
+            </div>
+
+            <div class="bg-slate-50 rounded-2xl p-6 text-center">
+                📱
+                <p class="font-semibold mt-2">Mobile Friendly</p>
+            </div>
+
+            <div class="bg-slate-50 rounded-2xl p-6 text-center">
+                ⚡
+                <p class="font-semibold mt-2">Real-Time Updates</p>
+            </div>
+
+            <div class="bg-slate-50 rounded-2xl p-6 text-center">
+                ☁️
+                <p class="font-semibold mt-2">Cloud Hosted</p>
+            </div>
+
+        </div>
+
     </div>
 
-    <div class=" max-w-xs  xl:max-w-5xl flex-shrink-0">
-        <img src="{{ asset('landingpage/illustartion.svg') }}" alt="Hero illustration" />
-    </div>
 </section>
 
-<!-- SERVICES -->
-<section id="services" class="px-16 py-20" style="background: linear-gradient(to right, #C9E4DE 5%, #CEE4E0 45%, #D0E4E0 51%, #DFE3E7 100%);">
-    <h2 class="text-3xl font-bold text-center mb-12">Our Services</h2>
+<section class="py-24 bg-slate-950 text-white">
 
-    <div class="grid md:grid-cols-3 gap-6">
+    <div class="max-w-7xl mx-auto px-6">
 
-        <div class="bg-white/40 rounded-2xl p-8 text-center hover:-translate-y-1 hover:shadow-lg transition-all">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-sm flex items-center justify-center">
-                <img src="{{ asset('landingpage/vector.svg') }}" alt="Personal loan" class="w-14 h-14" />
+        <div class="grid md:grid-cols-4 gap-8 text-center">
+
+            <div>
+                <h3 class="counter text-5xl font-black" data-target="250">
+                    0
+                </h3>
+                <p class="mt-3 text-slate-400">
+                    Active Groups
+                </p>
             </div>
-            <h3 class="text-lg font-bold mb-2">Personal loan</h3>
-            <p class="text-sm text-gray-500 leading-relaxed mb-5">Personal loans provide borrowers with flexibility in how they use the funds.</p>
-            <a href="/register" class="inline-block px-6 py-2 rounded-full border-2 border-teal text-teal text-sm font-semibold hover:bg-teal hover:text-white transition-all">Apply now</a>
-        </div>
 
-        <div class="bg-white/40 rounded-2xl p-8 text-center hover:-translate-y-1 hover:shadow-lg transition-all">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center">
-                <img src="{{ asset('landingpage/Group 5.svg') }}" alt="Business loan" class="w-14 h-14" />
+            <div>
+                <h3 class="counter text-5xl font-black" data-target="5000">
+                    0
+                </h3>
+                <p class="mt-3 text-slate-400">
+                    Members
+                </p>
             </div>
-            <h3 class="text-lg font-bold mb-2">Business loan</h3>
-            <p class="text-sm text-gray-500 leading-relaxed mb-5">Business Loan Services provide financial assistance to businesses for various purposes.</p>
-            <a href="/register" class="inline-block px-6 py-2 rounded-full border-2 border-teal text-teal text-sm font-semibold hover:bg-teal hover:text-white transition-all">Apply now</a>
-        </div>
 
-        <div class="bg-white/40 rounded-2xl p-8 text-center hover:-translate-y-1 hover:shadow-lg transition-all">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center">
-                <img src="{{ asset('landingpage/Group 6.svg') }}" alt="Auto loan" class="w-14 h-14" />
+            <div>
+                <h3 class="counter text-5xl font-black" data-target="20">
+                    0
+                </h3>
+                <p class="mt-3 text-slate-400">
+                    Million Saved
+                </p>
             </div>
-            <h3 class="text-lg font-bold mb-2">Auto loan</h3>
-            <p class="text-sm text-gray-500 leading-relaxed mb-5">Auto Loan Services provide financing options for individuals and businesses to purchase a vehicle.</p>
-            <a href="/register" class="inline-block px-6 py-2 rounded-full border-2 border-teal text-teal text-sm font-semibold hover:bg-teal hover:text-white transition-all">Apply now</a>
+
+            <div>
+                <h3 class="counter text-5xl font-black" data-target="8">
+                    0
+                </h3>
+                <p class="mt-3 text-slate-400">
+                    Counties Served
+                </p>
+            </div>
+
         </div>
 
     </div>
 
-    <div class="text-center mt-10">
-        <a href="#" class="inline-block px-8 py-3 bg-teal text-white rounded-full font-semibold hover:bg-opacity-90 transition-all">View more</a>
-    </div>
 </section>
 
-<!-- HOW WE WORK -->
-<section id="how-it-works" class="px-16 py-20 bg-teal/5">
-    <h2 class="text-3xl font-bold text-center">How we works ?</h2>
-    <p class="text-center text-gray-500 mt-2 mb-16">This is a process, how you can get loan for your self.</p>
+<!-- FEATURES -->
+<section id="features" class="py-24">
 
-    <div class="flex flex-col gap-16">
+    <div class="max-w-7xl mx-auto px-6">
 
-        <!-- Step 1 -->
-        <div class="flex items-center gap-16">
-            <!-- IMAGE PLACEHOLDER -->
-            <div class="flex-shrink-0 w-52 h-52 rounded-full  flex flex-col items-center justify-center border-2 border-dashed border-green/40 text-center p-4">
-                <img src="{{ asset('landingpage/card1.svg') }}" alt="Step 1" class="w-40 h-40" />
-            </div>
-            <div class="flex-1">
-                <p class="font-serif text-6xl font-bold text-teal/10 leading-none mb-[-10px]">01</p>
-                <h3 class="text-xl font-bold mb-3">Application</h3>
-                <p class="text-gray-500 leading-relaxed">The borrower submits a loan application to the bank, either in person, online, or through other channels. The application includes personal and financial information, such as income, employment history, credit score, and the purpose of the loan.</p>
-            </div>
+        <div class="text-center mb-16">
+
+            <h2 class="text-5xl font-bold">
+                Everything Your Chama Needs
+            </h2>
+
+            <p class="text-slate-600 mt-4 text-lg">
+                Built specifically for savings groups and community lending.
+            </p>
+
         </div>
 
-        <!-- Step 2 -->
-        <div class="flex flex-row-reverse items-center gap-16">
-            <!-- IMAGE PLACEHOLDER -->
-            <div class="flex-shrink-0 w-52 h-52 rounded-full bg-green/10 flex flex-col items-center justify-center border-2 border-dashed border-green/40 text-center p-4">
-                <svg class="w-8 h-8 text-green/50 mb-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                <p class="text-xs text-green/60 font-medium">Step Image</p>
-            </div>
-            <div class="flex-1">
-                <p class="font-serif text-6xl font-bold text-teal/10 leading-none mb-[-10px]">02</p>
-                <h3 class="text-xl font-bold mb-3">Documentation and Verification</h3>
-                <p class="text-gray-500 leading-relaxed">The bank requests supporting documents from the borrower, such as identification proof, income statements, bank statements, and collateral details (if applicable). The bank verifies the information provided to assess the borrower's creditworthiness and eligibility for the loan.</p>
-            </div>
-        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
 
-        <!-- Step 3 -->
-        <div class="flex items-center gap-16">
-            <!-- IMAGE PLACEHOLDER -->
-            <div class="flex-shrink-0 w-52 h-52 rounded-full bg-green/10 flex flex-col items-center justify-center border-2 border-dashed border-green/40 text-center p-4">
-                <svg class="w-8 h-8 text-green/50 mb-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                <p class="text-xs text-green/60 font-medium">Step Image</p>
-            </div>
-            <div class="flex-1">
-                <p class="font-serif text-6xl font-bold text-teal/10 leading-none mb-[-10px]">03</p>
-                <h3 class="text-xl font-bold mb-3">Credit Assessment</h3>
-                <p class="text-gray-500 leading-relaxed">The bank conducts a credit assessment to evaluate the borrower's creditworthiness and ability to repay the loan. This process involves analyzing the borrower's credit history, income stability, debt-to-income ratio, and other factors.</p>
-            </div>
-        </div>
+            @php
+                $features = [
+                    ['💰','Contribution Tracking'],
+                    ['🏦','Loan Management'],
+                    ['👥','Member Management'],
+                    ['📊','Financial Reports'],
+                    ['🔔','Penalty Notifications'],
+                    ['📱','Mobile Friendly']
+                ];
+            @endphp
 
-        <!-- Step 4 -->
-        <div class="flex flex-row-reverse items-center gap-16">
-            <!-- IMAGE PLACEHOLDER -->
-            <div class="flex-shrink-0 w-52 h-52 rounded-full bg-green/10 flex flex-col items-center justify-center border-2 border-dashed border-green/40 text-center p-4">
-                <svg class="w-8 h-8 text-green/50 mb-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                <p class="text-xs text-green/60 font-medium">Step Image</p>
+            @foreach($features as $feature)
+
+            <div class="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition">
+
+                <div class="text-5xl mb-5">
+                    {{ $feature[0] }}
+                </div>
+
+                <h3 class="text-xl font-bold mb-3">
+                    {{ $feature[1] }}
+                </h3>
+
+                <p class="text-slate-600">
+                    Manage your chama efficiently with modern tools and real-time updates.
+                </p>
+
             </div>
-            <div class="flex-1">
-                <p class="font-serif text-6xl font-bold text-teal/10 leading-none mb-[-10px]">04</p>
-                <h3 class="text-xl font-bold mb-3">Loan Approval</h3>
-                <p class="text-gray-500 leading-relaxed">If the borrower meets the bank's lending criteria and passes the credit assessment, the loan is approved. The bank determines the loan amount, interest rate, repayment term, and any associated fees.</p>
-            </div>
+
+            @endforeach
+
         </div>
 
     </div>
+
 </section>
 
-<!-- ABOUT + CONTACT FORM -->
-<section id="about" class="px-16 py-20 bg-white flex gap-16 items-start">
+<!-- HOW IT WORKS -->
+<section id="how-it-works" class="py-24 bg-gradient-to-b from-white to-slate-50">
 
-    <!-- IMAGE PLACEHOLDER -->
-    <div class="hidden lg:flex flex-shrink-0 w-52 h-52 rounded-full bg-green/10 flex-col items-center justify-center border-2 border-dashed border-green/40 text-center p-4">
-        <svg class="w-8 h-8 text-green/50 mb-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-        <p class="text-xs text-green/60 font-medium">About Image</p>
+    <div class="max-w-7xl mx-auto px-6">
+
+        <div class="text-center mb-20">
+
+            <span class="inline-flex px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+                Simple & Transparent
+            </span>
+
+            <h2 class="text-5xl font-bold text-slate-900 mt-6">
+                How ChamaYetu Works
+            </h2>
+
+            <p class="mt-5 text-lg text-slate-600 max-w-3xl mx-auto">
+                From creating your chama to managing loans and repayments,
+                everything is designed to be simple, secure and efficient.
+            </p>
+
+        </div>
+
+        <div class="relative">
+
+            <!-- Connection line -->
+            <div class="hidden lg:block absolute top-12 left-0 right-0 h-1 rounded-full overflow-hidden">
+
+    <!-- Base subtle track -->
+    <div class="absolute inset-0 bg-slate-200/40"></div>
+
+    <!-- Soft gradient glow -->
+    <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-cyan-400/20 to-emerald-500/20"></div>
+
+    <!-- Moving pulse container -->
+    <div class="absolute inset-0 animate-flow-nodes flex items-center">
+
+        <!-- Node 1 -->
+        <span class="w-3 h-3 bg-blue-500 rounded-full shadow-lg shadow-blue-500/50"></span>
+
+        <span class="flex-1"></span>
+
+        <!-- Node 2 -->
+        <span class="w-3 h-3 bg-cyan-400 rounded-full shadow-lg shadow-cyan-400/50"></span>
+
+        <span class="flex-1"></span>
+
+        <!-- Node 3 -->
+        <span class="w-3 h-3 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/50"></span>
+
+        <span class="flex-1"></span>
+
+        <!-- Node 4 -->
+        <span class="w-3 h-3 bg-blue-600 rounded-full shadow-lg shadow-blue-600/50"></span>
+
     </div>
 
-    <div class="flex-1">
-        <h2 class="text-3xl font-bold mb-5">About us</h2>
-        <p class="text-gray-500 leading-relaxed">QuickFunds — Your trusted financial partner for loans. Quick approvals, competitive rates, and personalized solutions to meet your unique needs. Empowering you to achieve your financial goals. Apply online today!</p>
-        <p class="text-gray-500 leading-relaxed mt-4">Our mission is to empower individuals and businesses by providing them with the financial resources they need to achieve their goals.</p>
+</div>
+            <div class="grid lg:grid-cols-4 gap-8 relative">
+
+                <!-- Step 1 -->
+                <div class="group">
+
+                    <div class="w-24 h-24 mx-auto rounded-3xl bg-blue-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition">
+                        👥
+                    </div>
+
+                    <div class="mt-8 bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition">
+
+                        <span class="text-blue-600 font-bold text-sm">
+                            STEP 01
+                        </span>
+
+                        <h3 class="text-2xl font-bold mt-3 mb-4">
+                            Create a Group
+                        </h3>
+
+                        <p class="text-slate-600 leading-relaxed">
+                            Set up your savings group, define contribution rules,
+                            loan policies, penalties and member roles.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <!-- Step 2 -->
+                <div class="group">
+
+                    <div class="w-24 h-24 mx-auto rounded-3xl bg-cyan-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition">
+                        📨
+                    </div>
+
+                    <div class="mt-8 bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition">
+
+                        <span class="text-cyan-600 font-bold text-sm">
+                            STEP 02
+                        </span>
+
+                        <h3 class="text-2xl font-bold mt-3 mb-4">
+                            Invite Members
+                        </h3>
+
+                        <p class="text-slate-600 leading-relaxed">
+                            Share your unique group code and review member
+                            requests directly from your dashboard.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <!-- Step 3 -->
+                <div class="group">
+
+                    <div class="w-24 h-24 mx-auto rounded-3xl bg-emerald-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition">
+                        💰
+                    </div>
+
+                    <div class="mt-8 bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition">
+
+                        <span class="text-emerald-600 font-bold text-sm">
+                            STEP 03
+                        </span>
+
+                        <h3 class="text-2xl font-bold mt-3 mb-4">
+                            Track Savings
+                        </h3>
+
+                        <p class="text-slate-600 leading-relaxed">
+                            Monitor member contributions, savings growth,
+                            penalties and monthly targets automatically.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <!-- Step 4 -->
+                <div class="group">
+
+                    <div class="w-24 h-24 mx-auto rounded-3xl bg-purple-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition">
+                        📈
+                    </div>
+
+                    <div class="mt-8 bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition">
+
+                        <span class="text-purple-600 font-bold text-sm">
+                            STEP 04
+                        </span>
+
+                        <h3 class="text-2xl font-bold mt-3 mb-4">
+                            Manage Loans
+                        </h3>
+
+                        <p class="text-slate-600 leading-relaxed">
+                            Process loan applications, monitor repayments
+                            and keep your group's finances healthy.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
-    <!-- CONTACT FORM -->
-    <div id="contact" class="flex-shrink-0 w-80">
-        <h3 class="text-xl font-bold mb-5">Get in touch</h3>
-        <input type="text" placeholder="Your Name"
-               class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm mb-3 outline-none focus:border-teal transition-colors" />
-        <input type="tel" placeholder="Phone number"
-               class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm mb-3 outline-none focus:border-teal transition-colors" />
-        <input type="email" placeholder="Email address"
-               class="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm mb-4 outline-none focus:border-teal transition-colors" />
-        <button class="w-full py-3 bg-teal text-white font-bold rounded-lg hover:bg-opacity-90 transition-all">SEND</button>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials" class="py-24 bg-gradient-to-b from-slate-50 to-slate-100">
+
+    <div class="max-w-7xl mx-auto px-6">
+
+        <!-- Header -->
+        <div class="text-center mb-16">
+
+            <span class="inline-flex px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+                Trusted by Groups Across Kenya
+            </span>
+
+            <h2 class="text-5xl font-bold text-slate-900 mt-6">
+                What Members Say
+            </h2>
+
+            <p class="text-slate-600 mt-4 max-w-2xl mx-auto">
+                Real feedback from chama members using ChamaYetu to manage savings, loans, and contributions.
+            </p>
+
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+
+            <!-- Testimonial 1 -->
+            <div class="bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl transition">
+
+                <div class="flex items-center gap-4 mb-6">
+
+                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-700">
+                        JM
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-slate-900">James Mwangi</h4>
+                        <p class="text-sm text-slate-500">Nairobi Chama Member</p>
+                    </div>
+
+                </div>
+
+                <p class="text-slate-600 leading-relaxed">
+                    “ChamaYetu has made it so easy for us to track contributions.
+                    Everything is transparent and automatic now.”
+                </p>
+
+            </div>
+
+            <!-- Testimonial 2 -->
+            <div class="bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl transition">
+
+                <div class="flex items-center gap-4 mb-6">
+
+                    <div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-700">
+                        AW
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-slate-900">Aisha Wanjiku</h4>
+                        <p class="text-sm text-slate-500">Kiambu Savings Group</p>
+                    </div>
+
+                </div>
+
+                <p class="text-slate-600 leading-relaxed">
+                    “Loan approvals are now fast and transparent. No more confusion in our group meetings.”
+                </p>
+
+            </div>
+
+            <!-- Testimonial 3 -->
+            <div class="bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl transition">
+
+                <div class="flex items-center gap-4 mb-6">
+
+                    <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center font-bold text-purple-700">
+                        DK
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-slate-900">David Kiprotich</h4>
+                        <p class="text-sm text-slate-500">Eldoret Farmers Chama</p>
+                    </div>
+
+                </div>
+
+                <p class="text-slate-600 leading-relaxed">
+                    “Managing savings used to be chaotic. Now everything is organized and easy to follow.”
+                </p>
+
+            </div>
+
+        </div>
+
     </div>
+
+</section>
+
+<!-- PRICING -->
+<section id="pricing" class="py-24 bg-slate-100">
+
+    <div class="max-w-6xl mx-auto px-6">
+
+        <div class="text-center mb-16">
+
+            <h2 class="text-5xl font-bold">
+                Simple Pricing
+            </h2>
+
+            <p class="text-slate-600 mt-4">
+                Start free and grow with your group.
+            </p>
+
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+
+            <div class="bg-white rounded-3xl p-10 shadow-lg">
+
+                <h3 class="text-2xl font-bold">
+                    Free
+                </h3>
+
+                <div class="text-5xl font-black mt-6">
+                    KES 0
+                </div>
+
+                <ul class="mt-8 space-y-4">
+
+                    <li>✓ Unlimited Members</li>
+                    <li>✓ Contributions Tracking</li>
+                    <li>✓ Loan Management</li>
+                    <li>✓ Reports</li>
+
+                </ul>
+
+                <a href="/register"
+                   class="block text-center mt-8 py-4 rounded-xl bg-blue-600 text-white font-bold">
+
+                    Start Free
+
+                </a>
+
+            </div>
+
+            <div class="bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-3xl p-10 shadow-2xl">
+
+                <span class="bg-white text-blue-600 px-4 py-1 rounded-full text-sm font-bold">
+                    Coming Soon
+                </span>
+
+                <h3 class="text-2xl font-bold mt-6">
+                    Premium
+                </h3>
+
+                <div class="text-5xl font-black mt-6">
+                    KES 499
+                </div>
+
+                <ul class="mt-8 space-y-4">
+
+                    <li>✓ SMS Notifications</li>
+                    <li>✓ Advanced Reports</li>
+                    <li>✓ M-Pesa Automation</li>
+                    <li>✓ Priority Support</li>
+
+                </ul>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="py-24 bg-gradient-to-b from-white to-slate-50">
+
+    <div class="max-w-4xl mx-auto px-6">
+
+        <!-- Header -->
+        <div class="text-center mb-16">
+
+            <span class="inline-flex px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+                Need Help?
+            </span>
+
+            <h2 class="text-5xl font-bold text-slate-900 mt-6">
+                Frequently Asked Questions
+            </h2>
+
+            <p class="text-slate-600 mt-4">
+                Everything you need to know about using ChamaYetu
+            </p>
+
+        </div>
+
+        <!-- FAQ Items -->
+        <div
+            x-data="{ open: null }"
+            class="space-y-4"
+        >
+
+            <!-- Item 1 -->
+            <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-100">
+
+                <button
+                    @click="open === 1 ? open = null : open = 1"
+                    class="w-full flex justify-between items-center p-6 text-left hover:bg-slate-50 transition"
+                >
+                    <span class="font-semibold text-slate-900">
+                        Is ChamaYetu free to use?
+                    </span>
+
+                    <span class="text-blue-600 text-2xl">
+                        +
+                    </span>
+                </button>
+
+                <div x-show="open === 1" x-transition class="px-6 pb-6 text-slate-600">
+                    Yes. You can create groups, manage savings, and track contributions without any subscription fees.
+                </div>
+
+            </div>
+
+            <!-- Item 2 -->
+            <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-100">
+
+                <button
+                    @click="open === 2 ? open = null : open = 2"
+                    class="w-full flex justify-between items-center p-6 text-left hover:bg-slate-50 transition"
+                >
+                    <span class="font-semibold text-slate-900">
+                        Can I manage loans in my group?
+                    </span>
+
+                    <span class="text-blue-600 text-2xl">
+                        +
+                    </span>
+                </button>
+
+                <div x-show="open === 2" x-transition class="px-6 pb-6 text-slate-600">
+                    Yes. You can issue loans, track repayments, apply penalties, and generate reports automatically.
+                </div>
+
+            </div>
+
+            <!-- Item 3 -->
+            <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-100">
+
+                <button
+                    @click="open === 3 ? open = null : open = 3"
+                    class="w-full flex justify-between items-center p-6 text-left hover:bg-slate-50 transition"
+                >
+                    <span class="font-semibold text-slate-900">
+                        Does it work on mobile?
+                    </span>
+
+                    <span class="text-blue-600 text-2xl">
+                        +
+                    </span>
+                </button>
+
+                <div x-show="open === 3" x-transition class="px-6 pb-6 text-slate-600">
+                    Yes. ChamaYetu is fully responsive and optimized for mobile, tablet, and desktop users.
+                </div>
+
+            </div>
+
+            <!-- Item 4 -->
+            <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-100">
+
+                <button
+                    @click="open === 4 ? open = null : open = 4"
+                    class="w-full flex justify-between items-center p-6 text-left hover:bg-slate-50 transition"
+                >
+                    <span class="font-semibold text-slate-900">
+                        Can I leave or switch groups?
+                    </span>
+
+                    <span class="text-blue-600 text-2xl">
+                        +
+                    </span>
+                </button>
+
+                <div x-show="open === 4" x-transition class="px-6 pb-6 text-slate-600">
+                    Yes. Users can switch between approved groups anytime from their dashboard.
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- CTA -->
+<section class="py-28 bg-slate-50">
+
+    <div class="max-w-6xl mx-auto px-6">
+
+        <div class="relative overflow-hidden rounded-[48px] bg-gradient-to-br from-blue-600 via-blue-500 to-teal-500 text-white shadow-2xl">
+
+            <!-- Glow effects -->
+            <div class="absolute -top-24 -left-24 w-72 h-72 bg-white/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-black/10 rounded-full blur-3xl"></div>
+
+            <div class="relative p-16 text-center">
+
+                <!-- Badge -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/15 backdrop-blur-md rounded-full text-sm font-semibold mb-6">
+                    🚀 Trusted by Chamas Across Kenya
+                </div>
+
+                <!-- Heading -->
+                <h2 class="text-4xl md:text-5xl font-black leading-tight">
+                    Ready to Grow Your Chama?
+                </h2>
+
+                <!-- Subtext -->
+                <p class="mt-6 text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
+                    Join hundreds of groups already using ChamaYetu to manage savings, loans, and contributions seamlessly.
+                </p>
+
+                <!-- Buttons -->
+                <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+
+                    <a href="/register"
+                       class="px-10 py-4 bg-white text-blue-600 font-bold rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300">
+
+                        Get Started Free
+
+                    </a>
+
+                    <a href="/login"
+                       class="px-10 py-4 border border-white/40 text-white font-semibold rounded-2xl hover:bg-white/10 transition">
+
+                        Sign In
+
+                    </a>
+
+                </div>
+
+                <!-- Trust Row -->
+                <div class="mt-12 flex flex-wrap justify-center gap-6 text-white/80 text-sm">
+
+                    <span>✔ No setup fees</span>
+                    <span>✔ Secure payments</span>
+                    <span>✔ Mobile friendly</span>
+                    <span>✔ Instant tracking</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
 </section>
 
 <!-- FOOTER -->
-<footer class="bg-[#0d2b33] text-gray-400 px-16 py-14 grid grid-cols-1 md:grid-cols-3 gap-10">
+<footer class="bg-slate-950 text-slate-400 py-16">
 
-    <div>
-        <div class="flex items-center">
-            <span class="text-2xl font-bold text-white">Chama</span>
-            <span class="text-2xl font-bold text-green">Yetu</span>
+    <div class="max-w-7xl mx-auto px-6">
+
+        <div class="flex flex-col lg:flex-row justify-between gap-10">
+
+            <div>
+
+                <h3 class="text-white text-3xl font-bold">
+                    ChamaYetu
+                </h3>
+
+                <p class="mt-4 max-w-md">
+                    Modern savings group management for communities, businesses and investment groups.
+                </p>
+
+            </div>
+
+            <div>
+
+                <h4 class="text-white font-semibold mb-4">
+                    Quick Links
+                </h4>
+
+                <div class="space-y-2">
+
+                    <a href="/login" class="block hover:text-white">
+                        Login
+                    </a>
+
+                    <a href="/register" class="block hover:text-white">
+                        Register
+                    </a>
+
+                </div>
+
+            </div>
+
         </div>
-        <p class="mt-4 text-sm leading-relaxed text-gray-500">Our mission is to empower individuals and businesses by providing them with the financial resources they need to achieve their goals.</p>
-        <div class="flex gap-2 mt-5">
-            <a href="#" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white text-xs hover:bg-green transition-colors">f</a>
-            <a href="#" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white text-xs hover:bg-green transition-colors">in</a>
-            <a href="#" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white text-xs hover:bg-green transition-colors">tw</a>
-            <a href="#" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white text-xs hover:bg-green transition-colors">yt</a>
-            <a href="#" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white text-xs hover:bg-green transition-colors">ig</a>
+
+        <div class="border-t border-slate-800 mt-10 pt-8 text-center">
+
+            © {{ date('Y') }} ChamaYetu. All rights reserved.
+
         </div>
-    </div>
 
-    <div>
-        <h4 class="text-white font-bold uppercase tracking-widest text-sm mb-4">Our Services</h4>
-        <ul class="space-y-2">
-            <li><a href="#" class="text-sm hover:text-green transition-colors">Personal loan</a></li>
-            <li><a href="#" class="text-sm hover:text-green transition-colors">Business loan</a></li>
-            <li><a href="#" class="text-sm hover:text-green transition-colors">Education loan</a></li>
-            <li><a href="#" class="text-sm hover:text-green transition-colors">Auto loan</a></li>
-        </ul>
-    </div>
-
-    <div>
-        <h4 class="text-white font-bold uppercase tracking-widest text-sm mb-4">Contact Us</h4>
-        <p class="flex items-center gap-2 text-sm mb-2">
-            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-            +254 700 000 000
-        </p>
-        <p class="flex items-center gap-2 text-sm mb-2">
-            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            support@chamayetu.com
-        </p>
-        <p class="flex items-start gap-2 text-sm">
-            <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            Nairobi, Kenya
-        </p>
     </div>
 
 </footer>
 
 <script>
-    const menuBtn = document.getElementById('menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
-    menuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+document.querySelectorAll('.counter').forEach(counter => {
+
+    const target = +counter.dataset.target;
+
+    const updateCount = () => {
+
+        const count = +counter.innerText;
+
+        const increment = target / 100;
+
+        if (count < target) {
+
+            counter.innerText =
+                Math.ceil(count + increment);
+
+            setTimeout(updateCount, 20);
+
+        } else {
+
+            counter.innerText = target;
+
+        }
+    };
+
+    updateCount();
+
+});
+</script>
+<script>
+
+document.querySelectorAll('.faq-btn').forEach(btn => {
+
+    btn.addEventListener('click', () => {
+
+        btn.nextElementSibling.classList.toggle('hidden');
+
+    });
+
+});
+
 </script>
 
 </body>
 </html>
+

@@ -107,7 +107,6 @@ class GroupController extends Controller
 GroupJoinRequest::create([
     'group_id' => $group->id,
     'user_id' => auth()->id(),
-    'phone_number' => auth()->user()->phone_no,
     'message' => $validated['message'],
     'status' => 'pending'
 ]);
