@@ -80,7 +80,7 @@
 <body class="bg-slate-50 text-slate-800 font-sans">
 
 <!-- NAVBAR -->
-<nav class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+<nav class="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-slate-100">
 
     <div class="max-w-7xl mx-auto px-6 lg:px-8">
 
@@ -149,7 +149,7 @@
                     Smart Chama Management Platform
                 </span>
 
-                <h1 class="text-5xl lg:text-7xl font-black leading-tight mt-6">
+                <h1 class="text-4xl lg:text-6xl font-extrabold tracking-tight leading-tight mt-6">
 
                     Manage Your
                     <span class="text-blue-600">
@@ -171,14 +171,14 @@
                 <div class="flex flex-wrap gap-4 mt-10">
 
                     <a href="/register"
-                       class="px-8 py-4 bg-blue-600 text-white rounded-2xl font-semibold hover:bg-blue-700 transition shadow-lg">
+                       class="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition shadow-sm">
 
                         Create Free Account
 
                     </a>
 
                     <a href="#features"
-                       class="px-8 py-4 bg-white rounded-2xl border border-slate-300 font-semibold hover:bg-slate-100 transition">
+                       class="px-8 py-4 bg-white rounded-xl border border-slate-300 font-semibold hover:bg-slate-100 transition">
 
                         Explore Features
 
@@ -190,26 +190,26 @@
 
             <div>
 
-                <div class="bg-white rounded-3xl shadow-2xl p-8">
+                <div class="bg-white rounded-[28px] shadow-2xl p-8">
 
                     <div class="grid grid-cols-2 gap-4">
 
-                        <div class="bg-blue-50 p-6 rounded-2xl">
+                        <div class="bg-blue-50 p-6 rounded-xl">
                             <p class="text-sm text-slate-500">Members</p>
                             <h3 class="text-3xl font-bold mt-2">250+</h3>
                         </div>
 
-                        <div class="bg-teal-50 p-6 rounded-2xl">
+                        <div class="bg-teal-50 p-6 rounded-xl">
                             <p class="text-sm text-slate-500">Loans Issued</p>
                             <h3 class="text-3xl font-bold mt-2">KES 5M+</h3>
                         </div>
 
-                        <div class="bg-purple-50 p-6 rounded-2xl">
+                        <div class="bg-purple-50 p-6 rounded-xl">
                             <p class="text-sm text-slate-500">Contributions</p>
                             <h3 class="text-3xl font-bold mt-2">KES 20M+</h3>
                         </div>
 
-                        <div class="bg-green-50 p-6 rounded-2xl">
+                        <div class="bg-green-50 p-6 rounded-xl">
                             <p class="text-sm text-slate-500">Groups</p>
                             <h3 class="text-3xl font-bold mt-2">100+</h3>
                         </div>
@@ -236,22 +236,22 @@
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
 
-            <div class="bg-slate-50 rounded-2xl p-6 text-center">
+            <div class="bg-slate-50 rounded-xl p-6 text-center">
                 🔒
                 <p class="font-semibold mt-2">Secure Data</p>
             </div>
 
-            <div class="bg-slate-50 rounded-2xl p-6 text-center">
+            <div class="bg-slate-50 rounded-xl p-6 text-center">
                 📱
                 <p class="font-semibold mt-2">Mobile Friendly</p>
             </div>
 
-            <div class="bg-slate-50 rounded-2xl p-6 text-center">
+            <div class="bg-slate-50 rounded-xl p-6 text-center">
                 ⚡
                 <p class="font-semibold mt-2">Real-Time Updates</p>
             </div>
 
-            <div class="bg-slate-50 rounded-2xl p-6 text-center">
+            <div class="bg-slate-50 rounded-xl p-6 text-center">
                 ☁️
                 <p class="font-semibold mt-2">Cloud Hosted</p>
             </div>
@@ -262,14 +262,14 @@
 
 </section>
 
-<section class="py-24 bg-slate-950 text-white">
+<section class="py-20 bg-slate-950 text-white">
 
     <div class="max-w-7xl mx-auto px-6">
 
         <div class="grid md:grid-cols-4 gap-8 text-center">
 
             <div>
-                <h3 class="counter text-5xl font-black" data-target="250">
+                <h3 class="counter text-4xl font-bold" data-target="250">
                     0
                 </h3>
                 <p class="mt-3 text-slate-400">
@@ -278,7 +278,7 @@
             </div>
 
             <div>
-                <h3 class="counter text-5xl font-black" data-target="5000">
+                <h3 class="counter text-4xl font-bold" data-target="5000">
                     0
                 </h3>
                 <p class="mt-3 text-slate-400">
@@ -287,7 +287,7 @@
             </div>
 
             <div>
-                <h3 class="counter text-5xl font-black" data-target="20">
+                <h3 class="counter text-4xl font-bold" data-target="20">
                     0
                 </h3>
                 <p class="mt-3 text-slate-400">
@@ -296,7 +296,7 @@
             </div>
 
             <div>
-                <h3 class="counter text-5xl font-black" data-target="8">
+                <h3 class="counter text-4xl font-bold" data-target="8">
                     0
                 </h3>
                 <p class="mt-3 text-slate-400">
@@ -311,13 +311,13 @@
 </section>
 
 <!-- FEATURES -->
-<section id="features" class="py-24">
+<section id="features" class="py-20">
 
     <div class="max-w-7xl mx-auto px-6">
 
         <div class="text-center mb-16">
 
-            <h2 class="text-5xl font-bold">
+            <h2 class="text-3xl lg:text-4xl font-bold tracking-tight">
                 Everything Your Chama Needs
             </h2>
 
@@ -342,9 +342,9 @@
 
             @foreach($features as $feature)
 
-            <div class="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition">
+            <div class="bg-white rounded-[28px] p-8 shadow-sm hover:shadow-xl transition">
 
-                <div class="text-5xl mb-5">
+                <div class="text-3xl mb-4">
                     {{ $feature[0] }}
                 </div>
 
@@ -367,7 +367,7 @@
 </section>
 
 <!-- HOW IT WORKS -->
-<section id="how-it-works" class="py-24 bg-gradient-to-b from-white to-slate-50">
+<section id="how-it-works" class="py-20 bg-gradient-to-b from-white to-slate-50">
 
     <div class="max-w-7xl mx-auto px-6">
 
@@ -377,7 +377,7 @@
                 Simple & Transparent
             </span>
 
-            <h2 class="text-5xl font-bold text-slate-900 mt-6">
+            <h2 class="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 mt-6">
                 How ChamaYetu Works
             </h2>
 
@@ -403,22 +403,22 @@
     <div class="absolute inset-0 animate-flow-nodes flex items-center">
 
         <!-- Node 1 -->
-        <span class="w-3 h-3 bg-blue-500 rounded-full shadow-lg shadow-blue-500/50"></span>
+        <span class="w-3 h-3 bg-blue-500 rounded-full shadow-sm shadow-blue-500/50"></span>
 
         <span class="flex-1"></span>
 
         <!-- Node 2 -->
-        <span class="w-3 h-3 bg-cyan-400 rounded-full shadow-lg shadow-cyan-400/50"></span>
+        <span class="w-3 h-3 bg-cyan-400 rounded-full shadow-sm shadow-cyan-400/50"></span>
 
         <span class="flex-1"></span>
 
         <!-- Node 3 -->
-        <span class="w-3 h-3 bg-emerald-500 rounded-full shadow-lg shadow-emerald-500/50"></span>
+        <span class="w-3 h-3 bg-emerald-500 rounded-full shadow-sm shadow-emerald-500/50"></span>
 
         <span class="flex-1"></span>
 
         <!-- Node 4 -->
-        <span class="w-3 h-3 bg-blue-600 rounded-full shadow-lg shadow-blue-600/50"></span>
+        <span class="w-3 h-3 bg-blue-600 rounded-full shadow-sm shadow-blue-600/50"></span>
 
     </div>
 
@@ -428,11 +428,11 @@
                 <!-- Step 1 -->
                 <div class="group">
 
-                    <div class="w-24 h-24 mx-auto rounded-3xl bg-blue-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition">
+                    <div class="w-24 h-24 mx-auto rounded-[28px] bg-blue-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition">
                         👥
                     </div>
 
-                    <div class="mt-8 bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition">
+                    <div class="mt-8 bg-white rounded-[28px] p-8 shadow-sm hover:shadow-2xl transition">
 
                         <span class="text-blue-600 font-bold text-sm">
                             STEP 01
@@ -454,11 +454,11 @@
                 <!-- Step 2 -->
                 <div class="group">
 
-                    <div class="w-24 h-24 mx-auto rounded-3xl bg-cyan-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition">
+                    <div class="w-24 h-24 mx-auto rounded-[28px] bg-cyan-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition">
                         📨
                     </div>
 
-                    <div class="mt-8 bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition">
+                    <div class="mt-8 bg-white rounded-[28px] p-8 shadow-sm hover:shadow-2xl transition">
 
                         <span class="text-cyan-600 font-bold text-sm">
                             STEP 02
@@ -480,11 +480,11 @@
                 <!-- Step 3 -->
                 <div class="group">
 
-                    <div class="w-24 h-24 mx-auto rounded-3xl bg-emerald-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition">
+                    <div class="w-24 h-24 mx-auto rounded-[28px] bg-emerald-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition">
                         💰
                     </div>
 
-                    <div class="mt-8 bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition">
+                    <div class="mt-8 bg-white rounded-[28px] p-8 shadow-sm hover:shadow-2xl transition">
 
                         <span class="text-emerald-600 font-bold text-sm">
                             STEP 03
@@ -506,11 +506,11 @@
                 <!-- Step 4 -->
                 <div class="group">
 
-                    <div class="w-24 h-24 mx-auto rounded-3xl bg-purple-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition">
+                    <div class="w-24 h-24 mx-auto rounded-[28px] bg-purple-600 text-white flex items-center justify-center text-4xl shadow-xl group-hover:scale-110 transition">
                         📈
                     </div>
 
-                    <div class="mt-8 bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition">
+                    <div class="mt-8 bg-white rounded-[28px] p-8 shadow-sm hover:shadow-2xl transition">
 
                         <span class="text-purple-600 font-bold text-sm">
                             STEP 04
@@ -538,7 +538,7 @@
 </section>
 
 <!-- TESTIMONIALS -->
-<section id="testimonials" class="py-24 bg-gradient-to-b from-slate-50 to-slate-100">
+<section id="testimonials" class="py-20 bg-gradient-to-b from-slate-50 to-slate-100">
 
     <div class="max-w-7xl mx-auto px-6">
 
@@ -549,7 +549,7 @@
                 Trusted by Groups Across Kenya
             </span>
 
-            <h2 class="text-5xl font-bold text-slate-900 mt-6">
+            <h2 class="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 mt-6">
                 What Members Say
             </h2>
 
@@ -562,7 +562,7 @@
         <div class="grid md:grid-cols-3 gap-8">
 
             <!-- Testimonial 1 -->
-            <div class="bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl transition">
+            <div class="bg-white p-8 rounded-[28px] shadow-sm hover:shadow-2xl transition">
 
                 <div class="flex items-center gap-4 mb-6">
 
@@ -585,7 +585,7 @@
             </div>
 
             <!-- Testimonial 2 -->
-            <div class="bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl transition">
+            <div class="bg-white p-8 rounded-[28px] shadow-sm hover:shadow-2xl transition">
 
                 <div class="flex items-center gap-4 mb-6">
 
@@ -607,7 +607,7 @@
             </div>
 
             <!-- Testimonial 3 -->
-            <div class="bg-white p-8 rounded-3xl shadow-lg hover:shadow-2xl transition">
+            <div class="bg-white p-8 rounded-[28px] shadow-sm hover:shadow-2xl transition">
 
                 <div class="flex items-center gap-4 mb-6">
 
@@ -635,13 +635,13 @@
 </section>
 
 <!-- PRICING -->
-<section id="pricing" class="py-24 bg-slate-100">
+<section id="pricing" class="py-20 bg-slate-100">
 
     <div class="max-w-6xl mx-auto px-6">
 
         <div class="text-center mb-16">
 
-            <h2 class="text-5xl font-bold">
+            <h2 class="text-3xl lg:text-4xl font-bold tracking-tight">
                 Simple Pricing
             </h2>
 
@@ -653,13 +653,13 @@
 
         <div class="grid lg:grid-cols-2 gap-8">
 
-            <div class="bg-white rounded-3xl p-10 shadow-lg">
+            <div class="bg-white rounded-[28px] p-10 shadow-sm">
 
                 <h3 class="text-2xl font-bold">
                     Free
                 </h3>
 
-                <div class="text-5xl font-black mt-6">
+                <div class="text-4xl font-bold mt-6">
                     KES 0
                 </div>
 
@@ -681,7 +681,7 @@
 
             </div>
 
-            <div class="bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-3xl p-10 shadow-2xl">
+            <div class="bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-[28px] p-10 shadow-2xl">
 
                 <span class="bg-white text-blue-600 px-4 py-1 rounded-full text-sm font-bold">
                     Coming Soon
@@ -691,7 +691,7 @@
                     Premium
                 </h3>
 
-                <div class="text-5xl font-black mt-6">
+                <div class="text-4xl font-bold mt-6">
                     KES 499
                 </div>
 
@@ -713,7 +713,7 @@
 </section>
 
 <!-- FAQ -->
-<section id="faq" class="py-24 bg-gradient-to-b from-white to-slate-50">
+<section id="faq" class="py-20 bg-gradient-to-b from-white to-slate-50">
 
     <div class="max-w-4xl mx-auto px-6">
 
@@ -724,7 +724,7 @@
                 Need Help?
             </span>
 
-            <h2 class="text-5xl font-bold text-slate-900 mt-6">
+            <h2 class="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 mt-6">
                 Frequently Asked Questions
             </h2>
 
@@ -741,7 +741,7 @@
         >
 
             <!-- Item 1 -->
-            <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-100">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100">
 
                 <button
                     @click="open === 1 ? open = null : open = 1"
@@ -763,7 +763,7 @@
             </div>
 
             <!-- Item 2 -->
-            <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-100">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100">
 
                 <button
                     @click="open === 2 ? open = null : open = 2"
@@ -785,7 +785,7 @@
             </div>
 
             <!-- Item 3 -->
-            <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-100">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100">
 
                 <button
                     @click="open === 3 ? open = null : open = 3"
@@ -807,7 +807,7 @@
             </div>
 
             <!-- Item 4 -->
-            <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-100">
+            <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-100">
 
                 <button
                     @click="open === 4 ? open = null : open = 4"
@@ -853,7 +853,7 @@
                 </div>
 
                 <!-- Heading -->
-                <h2 class="text-4xl md:text-5xl font-black leading-tight">
+                <h2 class="text-4xl md:text-4xl font-bold leading-tight">
                     Ready to Grow Your Chama?
                 </h2>
 
@@ -866,14 +866,14 @@
                 <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
 
                     <a href="/register"
-                       class="px-10 py-4 bg-white text-blue-600 font-bold rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300">
+                       class="px-10 py-4 bg-white text-blue-600 font-bold rounded-xl shadow-sm hover:scale-105 transition-transform duration-300">
 
                         Get Started Free
 
                     </a>
 
                     <a href="/login"
-                       class="px-10 py-4 border border-white/40 text-white font-semibold rounded-2xl hover:bg-white/10 transition">
+                       class="px-10 py-4 border border-white/40 text-white font-semibold rounded-xl hover:bg-white/10 transition">
 
                         Sign In
 

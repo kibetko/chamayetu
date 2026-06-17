@@ -21,7 +21,71 @@
             </div>
 
             {{-- Profile link --}}
-            <div>
+            <div class="flex items-center gap-4">
+                <div class="relative">
+
+                    <button
+                        onclick="document.getElementById('notification-dropdown').classList.toggle('hidden')"
+                        class="relative">
+
+                        🔔
+
+                        @if(auth()->user()->unreadNotifications->count())
+                            <span class="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                {{ auth()->user()->unreadNotifications->count() }}
+                            </span>
+                        @endif
+
+                    </button>
+    <div class="relative">
+
+   
+
+    <div
+        id="notification-dropdown"
+        class="hidden absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-lg border z-50">
+
+        <div class="p-4 border-b">
+            <h3 class="font-semibold">
+                Notifications
+            </h3>
+        </div>
+
+        <div class="max-h-80 overflow-y-auto">
+
+            @forelse(auth()->user()->notifications()->latest()->take(10)->get() as $notification)
+
+                <div class="p-4 border-b">
+
+                    <div class="font-semibold text-sm">
+                        {{ $notification->data['title'] ?? '' }}
+                    </div>
+
+                    <div class="text-xs text-gray-500 mt-1">
+                        {{ $notification->data['message'] ?? '' }}
+                    </div>
+
+                    <div class="text-xs text-gray-400 mt-2">
+                        {{ $notification->created_at->diffForHumans() }}
+                    </div>
+
+                </div>
+
+            @empty
+
+                <div class="p-4 text-gray-500">
+                    No notifications
+                </div>
+
+            @endforelse
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
                 <a href="{{ route('profile.edit') }}" class="inline-flex items-center gap-3 rounded-full px-3 py-1 hover:bg-white/50">
                     <div class="h-9 w-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold">
                         {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
@@ -58,6 +122,56 @@
                 <div class="text-xs text-gray-500">Outstanding Loan Balances</div>
                 <div class="mt-3 text-2xl font-semibold text-[#063a2a]">
                     KES {{ number_format($loanStats['outstanding']) }}
+                </div>
+            </div>
+        </div>
+
+        {{-- Infographic: monthly contributions + top contributors --}}
+        @php
+            $monthlyContribLabels = isset($monthlyContributions) ? $monthlyContributions->pluck('month') : (isset($monthlyLoans) ? $monthlyLoans->pluck('month') : collect());
+            $monthlyContribData = isset($monthlyContributions) ? $monthlyContributions->pluck('total') : (isset($monthlyLoans) ? $monthlyLoans->pluck('total') : collect());
+
+            // prepare contributors: prefer $topContributors, fallback to topBorrowers or group members
+            if (isset($topContributors)) {
+                $contributors = $topContributors;
+            } elseif (isset($topBorrowers)) {
+                $contributors = $topBorrowers->map(function($b){ return (object)['name' => $b->user->name ?? 'Unknown', 'total' => $b->total_borrowed ?? 0]; });
+            } elseif (isset($group) && $group->members) {
+                $contributors = $group->members->map(function($m){ return (object)['name' => $m->name, 'total' => $m->contributions_sum ?? 0]; })->sortByDesc('total')->take(6);
+            } else {
+                $contributors = collect();
+            }
+
+            $contributorsLabels = $contributors->pluck('name');
+            $contributorsData = $contributors->pluck('total');
+        @endphp
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-green-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-[#063a2a]">Monthly Contributions</h3>
+                        <p class="text-sm text-gray-500 mt-1">Contributions over time</p>
+                    </div>
+                    <div class="text-sm text-gray-500">KES</div>
+                </div>
+
+                <div class="mt-4">
+                    <canvas id="monthlyContribChart" style="max-height:220px;"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-green-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-[#063a2a]">Top Contributors</h3>
+                        <p class="text-sm text-gray-500 mt-1">Contributions by member (recent)</p>
+                    </div>
+                    <div class="text-sm text-gray-500">KES</div>
+                </div>
+
+                <div class="mt-4">
+                    <canvas id="contributorsChart" style="max-height:220px;"></canvas>
                 </div>
             </div>
         </div>
@@ -138,8 +252,12 @@
                                 </div>
 
                                 <div class="text-right">
-                                    <div class="text-sm @if($act['amount']) text-red-600 font-semibold @else text-gray-500 @endif">
-                                        @if($act['amount']) KES {{ number_format($act['amount']) }} @else — @endif
+                                    <div class="text-sm text-gray-500">
+                                        @if($act['amount'])
+                                            <span class="text-red-600 font-semibold">KES {{ number_format($act['amount']) }}</span>
+                                        @else
+                                            —
+                                        @endif
                                     </div>
                                     <div class="text-xs mt-1">
                                         <span class="px-2 py-0.5 rounded-full text-xs bg-{{ strtolower($act['status']) === 'pending' ? 'yellow' : 'green' }}-100 text-{{ strtolower($act['status']) === 'pending' ? 'yellow' : 'green' }}-700">
@@ -352,6 +470,45 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         options: { responsive: true, plugins: { legend: { display: false } } }
     });
+
+    // Monthly contributions chart (bar)
+    const monthlyCtx = document.getElementById('monthlyContribChart')?.getContext('2d');
+    if (monthlyCtx) {
+        new Chart(monthlyCtx, {
+            type: 'bar',
+            data: {
+                labels: @json($monthlyContribLabels),
+                datasets: [{
+                    label: 'Contributions',
+                    data: @json($monthlyContribData),
+                    backgroundColor: '#10B981',
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    }
+
+    // Top contributors (horizontal bar)
+    const contribCtx = document.getElementById('contributorsChart')?.getContext('2d');
+    if (contribCtx) {
+        new Chart(contribCtx, {
+            type: 'bar',
+            data: {
+                labels: @json($contributorsLabels),
+                datasets: [{
+                    label: 'Contributed',
+                    data: @json($contributorsData),
+                    backgroundColor: ['#60A5FA','#34D399','#F472B6','#F59E0B','#A78BFA','#F97316']
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
 });
 </script>
 

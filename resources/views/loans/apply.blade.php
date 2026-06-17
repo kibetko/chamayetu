@@ -1,286 +1,98 @@
-```blade
-<x-layouts.group
-    :group="$group"
-    :groups="$groups">
+<x-layouts.group :group="$group" :groups="$groups">
 
 <div class="max-w-4xl mx-auto p-6">
 
-<form action="{{ route('loans.store') }}" method="POST">
+    <form action="{{ route('loans.store') }}" method="POST">
+        @csrf
 
-    @csrf
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
 
-    <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
+            <div class="p-6 border-b border-green-50 flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-semibold text-[#063a2a]">Apply for a Loan</h2>
+                    <p class="text-sm text-gray-500 mt-1">Request a loan from your group and view repayment details instantly.</p>
+                </div>
 
-        {{-- Header --}}
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 p-8">
+                <div class="text-right">
+                    <div class="text-xs text-gray-500">Available Group Funds</div>
+                    <div class="text-lg font-bold text-emerald-700">KES {{ number_format($availableFunds) }}</div>
+                </div>
+            </div>
 
-            <h1 class="text-3xl font-bold text-white">
-                Apply For Loan
-            </h1>
+            <div class="p-6 grid grid-cols-1 gap-6">
 
-            <p class="text-blue-100 mt-2">
-                Submit a loan request to your group for approval.
-            </p>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-2">Loan Amount (KES)</label>
+                        <input id="amount" name="amount" type="number" min="1" required
+                               class="w-full rounded-lg border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-100" />
+                        @error('amount')<p class="text-red-500 text-xs mt-2">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-2">Repayment Period</label>
+                        <select id="duration" name="duration_days" class="w-full rounded-lg border border-slate-200 px-4 py-3">
+                            @for($i = 30; $i <= $group->settings->repayment_period_days; $i += 30)
+                                <option value="{{ $i }}">{{ $i / 30 }} {{ $i == 30 ? 'Month' : 'Months' }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-2">Reason for Loan</label>
+                    <textarea name="reason" rows="4" required class="w-full rounded-lg border border-slate-200 px-4 py-3"></textarea>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-4 items-stretch">
+                    <div class="rounded-lg border border-green-50 bg-emerald-50 p-4">
+                        <div class="text-xs text-gray-500">Loan Amount</div>
+                        <div class="text-lg font-semibold text-[#063a2a]">KES <span id="loanAmount">0</span></div>
+
+                        <div class="mt-3 text-xs text-gray-500">Interest (est)</div>
+                        <div class="text-sm font-medium text-[#063a2a]">KES <span id="interestAmount">0</span></div>
+                    </div>
+
+                    <div class="rounded-lg border border-slate-100 p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="text-xs text-gray-500">Total Repayment</div>
+                            <div class="text-2xl font-bold text-blue-700">KES <span id="repayment">0</span></div>
+                        </div>
+
+                        <div class="text-xs text-gray-500 mt-4">Interest rate: <strong>{{ $group->settings->interest_rate ?? 0 }}%</strong></div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold">Submit Loan Request</button>
+            </div>
 
         </div>
-
-        <div class="p-8 space-y-8">
-
-            {{-- Amount --}}
-            <div>
-
-                <label class="block text-sm font-semibold text-slate-700 mb-2">
-                    Loan Amount (KES)
-                </label>
-
-                <input
-                    id="amount"
-                    name="amount"
-                    type="number"
-                    min="1"
-                    required
-                    placeholder="Enter loan amount"
-                    class="w-full rounded-2xl border-slate-300 px-4 py-3 focus:border-blue-500 focus:ring-blue-500">
-
-                @error('amount')
-                    <p class="text-red-500 text-sm mt-2">
-                        {{ $message }}
-                    </p>
-                @enderror
-
-            </div>
-
-            {{-- Duration --}}
-            <div>
-
-                <div class="flex justify-between items-center mb-3">
-
-                    <label class="text-sm font-semibold text-slate-700">
-                        Repayment Period
-                    </label>
-
-                    <span
-                        id="durationBadge"
-                        class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold text-sm">
-
-                        1 Month
-
-                    </span>
-
-                </div>
-
-                <input
-                    id="duration"
-                    name="duration_days"
-                    type="range"
-                    min="1"
-                    max="{{ $group->settings->repayment_period_days }}"
-                    value="1"
-                    class="w-full">
-
-                <div class="flex justify-between text-xs text-slate-400 mt-2">
-
-                    <span>1 Day</span>
-
-                    <span>
-                        Max:
-                        {{ $group->settings->repayment_period_days }}
-                        Days
-                    </span>
-
-                </div>
-
-                @error('duration_days')
-                    <p class="text-red-500 text-sm mt-2">
-                        {{ $message }}
-                    </p>
-                @enderror
-
-            </div>
-
-            {{-- Reason --}}
-            <div>
-
-                <label class="block text-sm font-semibold text-slate-700 mb-2">
-                    Reason For Loan
-                </label>
-
-                <textarea
-                    name="reason"
-                    rows="4"
-                    required
-                    placeholder="Explain why you need this loan..."
-                    class="w-full rounded-2xl border-slate-300 px-4 py-3 focus:border-blue-500 focus:ring-blue-500"></textarea>
-
-                @error('reason')
-                    <p class="text-red-500 text-sm mt-2">
-                        {{ $message }}
-                    </p>
-                @enderror
-
-            </div>
-
-            {{-- Summary --}}
-            <div
-                class="rounded-2xl border border-blue-200 bg-blue-50 p-6">
-
-                <h3 class="font-bold text-lg text-slate-800 mb-4">
-                    Repayment Summary
-                </h3>
-
-                <div class="space-y-3">
-
-                    <div class="flex justify-between">
-
-                        <span class="text-slate-600">
-                            Loan Amount
-                        </span>
-
-                        <strong>
-                            KES
-                            <span id="loanAmount">
-                                0
-                            </span>
-                        </strong>
-
-                    </div>
-
-                    <div class="flex justify-between">
-
-                        <span class="text-slate-600">
-                            Interest Rate
-                        </span>
-
-                        <strong>
-                            {{ $group->settings->interest_rate }}%
-                            per month
-                        </strong>
-
-                    </div>
-
-                    <div class="flex justify-between">
-
-                        <span class="text-slate-600">
-                            Interest Amount
-                        </span>
-
-                        <strong>
-                            KES
-                            <span id="interestAmount">
-                                0
-                            </span>
-                        </strong>
-
-                    </div>
-
-                    <div class="border-t pt-4 flex justify-between">
-
-                        <span class="font-bold text-slate-800">
-                            Total Repayment
-                        </span>
-
-                        <strong
-                            class="text-2xl text-blue-700">
-
-                            KES
-                            <span id="repayment">
-                                0
-                            </span>
-
-                        </strong>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            {{-- Submit --}}
-            <button
-                type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold shadow-lg transition">
-
-                Submit Loan Request
-
-            </button>
-
-        </div>
-
-    </div>
-
-</form>
+    </form>
 
 </div>
 
 <script>
+    const amount = document.getElementById('amount');
+    const duration = document.getElementById('duration');
+    const loanAmount = document.getElementById('loanAmount');
+    const interestAmount = document.getElementById('interestAmount');
+    const repayment = document.getElementById('repayment');
 
-const amount =
-document.getElementById('amount');
+    function calculate() {
+        let amt = parseFloat(amount.value || 0);
+        let months = parseInt(duration.value) / 30;
+        let rate = {{ $group->settings->interest_rate ?? 0 }};
+        let interest = amt * (rate / 100) * months;
+        let total = amt + interest;
 
-const duration =
-document.getElementById('duration');
+        loanAmount.innerText = amt ? amt.toLocaleString() : '0';
+        interestAmount.innerText = interest ? interest.toLocaleString() : '0';
+        repayment.innerText = total ? total.toLocaleString() : '0';
+    }
 
-const repayment =
-document.getElementById('repayment');
-
-const interestAmount =
-document.getElementById('interestAmount');
-
-const loanAmount =
-document.getElementById('loanAmount');
-
-const durationBadge =
-document.getElementById('durationBadge');
-
-function calculate()
-{
-    let amt =
-        parseFloat(amount.value || 0);
-
-    let days =
-    parseInt(duration.value);
-
-    let months =
-    days / 30;
-
-    let rate =
-        {{ $group->settings->interest_rate ?? 0 }};
-
-    let interest =
-        amt *
-        (rate / 100) *
-        months;
-
-    let total =
-        amt +
-        interest;
-
-    loanAmount.innerText =
-        amt.toLocaleString();
-
-    interestAmount.innerText =
-        interest.toLocaleString();
-
-    repayment.innerText =
-        total.toLocaleString();
-
-    durationBadge.innerText =
-    days + (days === 1 ? ' Day' : ' Days');
-}
-
-amount.addEventListener(
-    'input',
-    calculate
-);
-
-duration.addEventListener(
-    'input',
-    calculate
-);
-
-calculate();
-
+    amount?.addEventListener('input', calculate);
+    duration?.addEventListener('change', calculate);
+    calculate();
 </script>
 
 </x-layouts.group>
-```

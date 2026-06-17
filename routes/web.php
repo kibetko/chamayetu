@@ -162,4 +162,9 @@ Route::post('/loans/{loan}/repay', [
     'repay'
 ])->name('loans.repay');
 
+Route::post(
+    '/notifications/{notification}/read',
+    [NotificationController::class, 'markAsRead']
+)->name('notifications.read');
+
 require __DIR__.'/auth.php';

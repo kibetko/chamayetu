@@ -51,8 +51,5 @@ public function invitationsSent()
         'invited_by'
     );
 }
-public function notifications()
-{
-    return $this->hasMany(Notification::class);
-}
+
 }

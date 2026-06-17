@@ -37,9 +37,9 @@ class Loan extends Model
     }
 
     public function approvals()
-    {
-        return $this->hasMany(LoanApproval::class);
-    }
+{
+    return $this->hasMany(LoanApproval::class);
+}
 
     public function repayments()
     {

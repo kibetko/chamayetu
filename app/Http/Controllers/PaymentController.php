@@ -29,65 +29,108 @@ class PaymentController extends Controller
     return $payment->paid_at->format('d M Y');
 });
 
-        $userId = auth()->id();
-        $settings = $group->settings;
+/*
+|--------------------------------------------------------------------------
+| Member Contribution Summary
+|--------------------------------------------------------------------------
+*/
+
+ $settings = $group->settings;
         $minimum = $settings?->minimum_contribution ?? 0;
-$penaltyAmount = $settings?->late_penalty_amount ?? 0;
-$penaltyType = $settings?->late_penalty_type ?? 'fixed';
-$totalContributions = Contribution::where('group_id', $groupId)
-    ->where('user_id', $userId)
-    ->sum('amount');
+        $penaltyAmount = $settings?->late_penalty_amount ?? 0;
+        $penaltyType = $settings?->late_penalty_type ?? 'fixed';
 
-        $minimumContribution = $minimum;
-    $group->settings?->minimum_contribution ?? 0;
+$memberPayments = Contribution::with('user')
+    ->where('group_id', $groupId)
+    ->get()
+    ->groupBy('user_id')
+    ->map(function ($contributions) use ($minimum) {
 
-$dueDay =
-    $group->settings?->contribution_due_day ?? 30;
+        $user = $contributions->first()->user;
 
-$paidThisMonth = Contribution::where(
-        'group_id',
-        $groupId
-    )
-    ->where('user_id', auth()->id())
-    ->whereMonth('paid_at', now()->month)
-    ->whereYear('paid_at', now()->year)
-    ->sum('amount');
+        $totalPaid = $contributions->sum('amount');
 
-$remainingThisMonth = max(
-    0,
-    $minimumContribution - $paidThisMonth
-);
+        $paidThisMonth = $contributions
+            ->filter(function ($contribution) {
+                return $contribution->paid_at->month === now()->month
+                    && $contribution->paid_at->year === now()->year;
+            })
+            ->sum('amount');
 
-$dueDate = now()->copy()->day(
-    min($dueDay, now()->daysInMonth)
-);
+        $remaining = max(
+            0,
+            $minimum - $paidThisMonth
+        );
 
-if (now()->greaterThan($dueDate)) {
-    $dueDate = $dueDate->addMonth();
-}
-$dueDate = now()->copy()->day($dueDay);
+        return [
+            'user' => $user,
+            'total_paid' => $totalPaid,
+            'paid_this_month' => $paidThisMonth,
+            'remaining' => $remaining,
+            'status' => $remaining <= 0
+                ? 'Complete'
+                : 'Pending',
+        ];
+    })
+    ->sortBy('remaining');
 
-if ($dueDate->isPast()) {
-    $dueDate->addMonth();
-}
+        $userId = auth()->id();
+       
+        $totalContributions = Contribution::where('group_id', $groupId)
+            ->where('user_id', $userId)
+            ->sum('amount');
 
-$isOverdue = now()->gt($dueDate);
+                $minimumContribution = $minimum;
+            $group->settings?->minimum_contribution ?? 0;
 
-$penalty = 0;
+        $dueDay =
+            $group->settings?->contribution_due_day ?? 30;
 
-if ($isOverdue && $paidThisMonth < $minimum) {
+        $paidThisMonth = Contribution::where(
+                'group_id',
+                $groupId
+            )
+            ->where('user_id', auth()->id())
+            ->whereMonth('paid_at', now()->month)
+            ->whereYear('paid_at', now()->year)
+            ->sum('amount');
 
-    $shortfall = $minimum - $paidThisMonth;
+        $remainingThisMonth = max(
+            0,
+            $minimumContribution - $paidThisMonth
+        );
 
-    if ($penaltyType === 'percentage') {
-        $penalty = ($shortfall * $penaltyAmount) / 100;
-    } else {
-        $penalty = $penaltyAmount;
-    }
-}
-$remainingThisMonth = max($minimum - $paidThisMonth, 0);
+        $dueDate = now()->copy()->day(
+            min($dueDay, now()->daysInMonth)
+        );
 
-$daysRemaining = now()->diffInDays($dueDate);
+        if (now()->greaterThan($dueDate)) {
+            $dueDate = $dueDate->addMonth();
+        }
+        $dueDate = now()->copy()->day($dueDay);
+
+        if ($dueDate->isPast()) {
+            $dueDate->addMonth();
+        }
+
+        $isOverdue = now()->gt($dueDate);
+
+        $penalty = 0;
+
+        if ($isOverdue && $paidThisMonth < $minimum) {
+
+            $shortfall = $minimum - $paidThisMonth;
+
+            if ($penaltyType === 'percentage') {
+                $penalty = ($shortfall * $penaltyAmount) / 100;
+            } else {
+                $penalty = $penaltyAmount;
+            }
+        }
+
+        $remainingThisMonth = max($minimum - $paidThisMonth, 0);
+
+        $daysRemaining = now()->diffInDays($dueDate);
 
         $thisMonth = Contribution::where(
             'group_id',
@@ -98,19 +141,20 @@ $daysRemaining = now()->diffInDays($dueDate);
         ->sum('amount');
 
         return view(
-            'payments.index',
-            compact(
-    'group',
-    'groups',
-    'payments',
-    'totalContributions',
-    'thisMonth',
-    'paidThisMonth',
-    'remainingThisMonth',
-    'dueDate',
-    'daysRemaining',
-    'penalty'
-)
-        );
+    'payments.index',
+    compact(
+        'group',
+        'groups',
+        'payments',
+        'memberPayments',
+        'totalContributions',
+        'thisMonth',
+        'paidThisMonth',
+        'remainingThisMonth',
+        'dueDate',
+        'daysRemaining',
+        'penalty'
+    )
+);
     }
 }
