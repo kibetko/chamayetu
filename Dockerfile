@@ -27,9 +27,7 @@ RUN npm install
 RUN npm run build
 
 # Cache Laravel configuration
-RUN php artisan config:cache
-RUN php artisan route:cache
-RUN php artisan view:cache
+CMD php artisan serve --host=0.0.0.0 --port=${PORT}
 
 # Give Laravel permissions
 RUN chmod -R 775 storage bootstrap/cache
