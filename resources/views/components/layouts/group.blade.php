@@ -5,7 +5,7 @@
 
 <x-app-layout>
 
-<div class="flex h-screen bg-[#D9E3F4]">
+<div class="flex h-screen bg-[#D9E3F4] ">
 
     {{-- Mobile Overlay --}}
     <div
@@ -227,7 +227,7 @@
         </div>
 
         {{-- PAGE CONTENT --}}
-        <div class="p-6">
+        <div class="p-3 sm:p-4 lg:p-6">
 
             {{ $slot }}
 

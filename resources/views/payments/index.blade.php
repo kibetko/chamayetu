@@ -1,22 +1,20 @@
 <x-layouts.group :group="$group" :groups="$groups">
 
-<div class="min-h-screen bg-gradient-to-b from-[#EAF6F0] to-[#D9EAF2] p-6">
+<div class="min-h-screen bg-gradient-to-b from-[#EAF6F0] to-[#D9EAF2] p-3 sm:p-4 lg:p-6">
 
     <div class="max-w-7xl mx-auto">
 
         {{-- HEADER --}}
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
+       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-6 mb-6 sm:mb-8">
 
             <div>
-                <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">
-                    Payments
-                </h1>
-                <p class="text-slate-500 mt-1">
+                <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">
+                <p class="text-slate-00 mt-1">
                     Contribution history and member payments.
                 </p>
             </div>
 
-            <div class="flex items-center gap-3 w-full md:w-auto">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
 
                 <div class="relative flex-1 md:flex-none">
                     <input id="paymentsSearch" type="search"
@@ -36,7 +34,7 @@
         </div>
 
         {{-- STATS --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-10">
 
             @foreach([
                 ['label'=>'Total Contributions','value'=>$totalContributions,'color'=>'emerald'],
@@ -46,7 +44,7 @@
             ] as $stat)
             
 
-            <div class="bg-white rounded-2xl shadow-md p-6 hover:shadow-lg transition">
+            <div class="bg-white rounded-2xl shadow-md p-4 sm:p-6 hover:shadow-lg transition">
                 <p class="text-slate-500 text-sm">{{ $stat['label'] }}</p>
                 <h2 class="text-2xl font-bold text-{{ $stat['color'] }}-600 mt-2">
                     {{ is_numeric($stat['value']) ? 'KES '.number_format($stat['value'],2) : $stat['value'] }}
@@ -60,10 +58,9 @@
         {{--SUMMARY --}}
         {{-- MEMBER CONTRIBUTION SUMMARY --}}
 
-<div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
+<div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-4 md:mb-6">
 
-    <div class="px-6 py-4 border-b flex items-center justify-between">
-
+<div class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <h2 class="font-semibold text-slate-700">
             Member Contribution Summary
         </h2>
@@ -77,127 +74,184 @@
 
     <div class="overflow-x-auto">
 
-        <table class="w-full min-w-[900px]">
+        <div class="overflow-x-auto rounded-lg">
 
-            <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+    <table class="w-full min-w-[700px]">
 
-                <tr>
-                    <th class="px-6 py-3 text-left">Member</th>
-                    <th class="px-6 py-3 text-left">Total Contributions</th>
-                    <th class="px-6 py-3 text-left">This Month</th>
-                    <th class="px-6 py-3 text-left">Remaining</th>
-                    <th class="px-6 py-3 text-left">Status</th>
-                </tr>
+        <thead class="bg-slate-50 text-xs uppercase text-slate-500">
 
-            </thead>
+            <tr>
 
-            <tbody>
+                <th class="px-3 sm:px-6 py-3 text-left">
+                    Member
+                </th>
 
-                @forelse($memberPayments as $member)
+                <th class="px-3 sm:px-6 py-3 text-left">
+                    Total Contributions
+                </th>
 
-                <tr class="border-t hover:bg-slate-50">
+                <th class="px-3 sm:px-6 py-3 text-left">
+                    This Month
+                </th>
 
-                    <td class="px-6 py-4">
+                <th class="px-3 sm:px-6 py-3 text-left">
+                    Remaining
+                </th>
 
-                        <div class="flex items-center gap-3">
+                <th class="px-3 sm:px-6 py-3 text-left">
+                    Status
+                </th>
 
-                            <div class="h-10 w-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold">
+            </tr>
 
-                                {{ strtoupper(substr($member['user']->name, 0, 2)) }}
+        </thead>
+
+
+        <tbody>
+
+            @forelse($memberPayments as $member)
+
+            <tr class="border-t hover:bg-slate-50 transition">
+
+
+                {{-- MEMBER --}}
+                <td class="px-3 sm:px-6 py-3 sm:py-4">
+
+                    <div class="flex items-center gap-3">
+
+
+                        <div class="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs sm:text-sm">
+
+                            {{ strtoupper(substr($member['user']->name, 0, 2)) }}
+
+                        </div>
+
+
+                        <div>
+
+                            <div class="text-sm sm:text-base font-medium">
+
+                                {{ $member['user']->name }}
 
                             </div>
 
-                            <div>
 
-                                <div class="font-medium">
-                                    {{ $member['user']->name }}
-                                </div>
+                            <div class="text-xs text-slate-400">
 
-                                <div class="text-xs text-slate-400">
-                                    {{ $member['user']->phone_no ?? '-' }}
-                                </div>
+                                {{ $member['user']->phone_no ?? '-' }}
 
                             </div>
 
                         </div>
 
-                    </td>
 
-                    <td class="px-6 py-4 font-semibold text-blue-600">
+                    </div>
 
-                        KES {{ number_format($member['total_paid'], 2) }}
+                </td>
 
-                    </td>
 
-                    <td class="px-6 py-4 font-semibold text-emerald-600">
 
-                        KES {{ number_format($member['paid_this_month'], 2) }}
+                {{-- TOTAL CONTRIBUTIONS --}}
+                <td class="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-blue-600 text-sm sm:text-base">
 
-                    </td>
+                    KES {{ number_format($member['total_paid'], 2) }}
 
-                    <td class="px-6 py-4">
+                </td>
 
-                        @if($member['remaining'] > 0)
 
-                            <span class="font-semibold text-orange-600">
 
-                                KES {{ number_format($member['remaining'], 2) }}
+                {{-- THIS MONTH --}}
+                <td class="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-emerald-600 text-sm sm:text-base">
 
-                            </span>
+                    KES {{ number_format($member['paid_this_month'], 2) }}
 
-                        @else
+                </td>
 
-                            <span class="font-semibold text-green-600">
 
-                                Fully Paid
 
-                            </span>
+                {{-- REMAINING --}}
+                <td class="px-3 sm:px-6 py-3 sm:py-4">
 
-                        @endif
+                    @if($member['remaining'] > 0)
 
-                    </td>
+                        <span class="font-semibold text-orange-600 text-sm sm:text-base">
 
-                    <td class="px-6 py-4">
+                            KES {{ number_format($member['remaining'], 2) }}
 
-                        @if($member['status'] === 'Complete')
+                        </span>
 
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
 
-                                Complete
+                    @else
 
-                            </span>
+                        <span class="font-semibold text-green-600 text-sm sm:text-base">
 
-                        @else
+                            Fully Paid
 
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
+                        </span>
 
-                                Pending
+                    @endif
 
-                            </span>
 
-                        @endif
+                </td>
 
-                    </td>
 
-                </tr>
 
-                @empty
+                {{-- STATUS --}}
+                <td class="px-3 sm:px-6 py-3 sm:py-4">
 
-                <tr>
 
-                    <td colspan="5" class="px-6 py-8 text-center text-slate-500">
+                    @if($member['status'] === 'Complete')
 
-                        No contributions found.
 
-                    </td>
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
 
-                </tr>
+                            Complete
 
-                @endforelse
+                        </span>
 
-            </tbody>
 
-        </table>
+                    @else
+
+
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
+
+                            Pending
+
+                        </span>
+
+
+                    @endif
+
+
+                </td>
+
+
+            </tr>
+
+
+            @empty
+
+
+            <tr>
+
+                <td colspan="5" class="px-6 py-8 text-center text-slate-500">
+
+                    No contributions found.
+
+                </td>
+
+            </tr>
+
+
+            @endforelse
+
+
+        </tbody>
+
+
+    </table>
+
+</div>
 
     </div>
 
@@ -210,68 +264,161 @@
 
             <section class="bg-white rounded-2xl shadow-lg overflow-hidden">
 
-                <div class="px-6 py-4 border-b flex justify-between">
+               <div class="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 border-b flex flex-col sm:flex-row sm:justify-between gap-2">
                     <h2 class="font-semibold text-slate-700">{{ $date }}</h2>
                     <span class="text-sm text-slate-400">{{ $records->count() }} records</span>
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[720px]">
+                    <div class="overflow-x-auto rounded-lg">
 
-                        <thead class="bg-slate-50 text-xs text-slate-500 uppercase">
-                            <tr>
-                                <th class="px-6 py-3 text-left">Member</th>
-                                <th class="px-6 py-3 text-left">Amount</th>
-                                <th class="px-6 py-3 text-left">Transaction</th>
-                                <th class="px-6 py-3 text-left">Status</th>
-                                <th class="px-6 py-3 text-left">Time</th>
-                            </tr>
-                        </thead>
+    <table class="w-full min-w-[650px]">
 
-                        <tbody>
+        <thead class="bg-slate-50 text-xs text-slate-500 uppercase">
 
-                        @foreach($records as $payment)
-                        <tr class="border-t hover:bg-slate-50 transition"
-                            data-name="{{ strtolower($payment->user->name) }}"
-                            data-code="{{ strtolower($payment->mpesaTransaction?->receipt_number ?? '') }}">
+            <tr>
 
-                            <td class="px-6 py-4 flex items-center gap-3">
-                                <div class="h-9 w-9 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">
-                                    {{ strtoupper(substr($payment->user->name,0,2)) }}
-                                </div>
-                                <div>
-                                    <div class="font-medium">{{ $payment->user->name }}</div>
-                                    <div class="text-xs text-slate-400">{{ $payment->user->phone_no ?? '-' }}</div>
-                                </div>
-                            </td>
+                <th class="px-3 sm:px-6 py-3 text-left">
+                    Member
+                </th>
 
-                            <td class="px-6 py-4 font-semibold text-emerald-600">
-                                KES {{ number_format($payment->amount,2) }}
-                            </td>
+                <th class="px-3 sm:px-6 py-3 text-left">
+                    Amount
+                </th>
 
-                            <td class="px-6 py-4 font-mono text-sm text-blue-600">
-                                {{ $payment->mpesaTransaction?->receipt_number ?? '-' }}
-                            </td>
+                <th class="px-3 sm:px-6 py-3 text-left">
+                    Transaction
+                </th>
 
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold
-                                    {{ $payment->status === 'paid'
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-yellow-100 text-yellow-700' }}">
-                                    {{ ucfirst($payment->status) }}
-                                </span>
-                            </td>
+                <th class="px-3 sm:px-6 py-3 text-left">
+                    Status
+                </th>
 
-                            <td class="px-6 py-4 text-slate-500">
-                                {{ $payment->paid_at?->format('H:i') }}
-                            </td>
+                <th class="px-3 sm:px-6 py-3 text-left">
+                    Time
+                </th>
 
-                        </tr>
-                        @endforeach
+            </tr>
 
-                        </tbody>
+        </thead>
 
-                    </table>
+
+        <tbody>
+
+
+        @foreach($records as $payment)
+
+
+        <tr class="border-t hover:bg-slate-50 transition"
+            data-name="{{ strtolower($payment->user->name) }}"
+            data-code="{{ strtolower($payment->mpesaTransaction?->receipt_number ?? '') }}">
+
+
+
+            {{-- MEMBER --}}
+            <td class="px-3 sm:px-6 py-3 sm:py-4">
+
+
+                <div class="flex items-center gap-2 sm:gap-3">
+
+
+                    <div class="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs sm:text-sm font-bold">
+
+                        {{ strtoupper(substr($payment->user->name,0,2)) }}
+
+                    </div>
+
+
+
+                    <div>
+
+
+                        <div class="text-sm sm:text-base font-medium">
+
+                            {{ $payment->user->name }}
+
+                        </div>
+
+
+
+                        <div class="text-xs text-slate-400">
+
+                            {{ $payment->user->phone_no ?? '-' }}
+
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </td>
+
+
+
+
+            {{-- AMOUNT --}}
+            <td class="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-emerald-600 text-sm sm:text-base">
+
+                KES {{ number_format($payment->amount,2) }}
+
+            </td>
+
+
+
+
+            {{-- TRANSACTION --}}
+            <td class="px-3 sm:px-6 py-3 sm:py-4 font-mono text-xs sm:text-sm text-blue-600">
+
+                {{ $payment->mpesaTransaction?->receipt_number ?? '-' }}
+
+            </td>
+
+
+
+
+            {{-- STATUS --}}
+            <td class="px-3 sm:px-6 py-3 sm:py-4">
+
+
+                <span class="px-3 py-1 rounded-full text-xs font-semibold
+                    {{ $payment->status === 'paid'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-yellow-100 text-yellow-700' }}">
+
+                    {{ ucfirst($payment->status) }}
+
+                </span>
+
+
+            </td>
+
+
+
+
+            {{-- TIME --}}
+            <td class="px-3 sm:px-6 py-3 sm:py-4 text-slate-500 text-sm">
+
+                {{ $payment->paid_at?->format('H:i') }}
+
+            </td>
+
+
+
+        </tr>
+
+
+        @endforeach
+
+
+        </tbody>
+
+
+    </table>
+
+</div>
                 </div>
 
             </section>
