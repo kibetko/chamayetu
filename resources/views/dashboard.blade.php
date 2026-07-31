@@ -124,6 +124,56 @@
                     KES {{ number_format($loanStats['outstanding']) }}
                 </div>
             </div>
+            <div class="bg-white rounded-xl shadow p-6">
+
+    <h2 class="font-semibold text-lg mb-4">
+        Online Members
+    </h2>
+
+
+    @forelse($onlineMembers as $member)
+
+        <div class="flex items-center gap-3 py-3 border-b">
+
+            <div class="relative">
+
+                <div class="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-700">
+                    {{ strtoupper(substr($member->name,0,1)) }}
+                </div>
+
+                <span class="absolute bottom-0 right-0 
+                    w-3 h-3 bg-green-500 
+                    rounded-full border-2 border-white">
+                </span>
+
+            </div>
+
+
+            <div>
+
+                <p class="font-medium">
+                    {{ $member->name }}
+                </p>
+
+                <p class="text-xs text-green-600">
+                    Online
+                </p>
+
+            </div>
+
+        </div>
+
+
+    @empty
+
+        <p class="text-gray-500">
+            No members online
+        </p>
+
+    @endforelse
+
+
+</div>
         </div>
 
         {{-- Infographic: monthly contributions + top contributors --}}

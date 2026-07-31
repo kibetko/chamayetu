@@ -70,9 +70,9 @@ class DashboardController extends Controller
 
 
             // Only paid contributions count
-            'contributions' => $group->contributions
-                ->where('status','paid')
-                ->sum('amount'),
+            'contributions' => $group->contributions()
+    ->where('status','paid')
+    ->sum('amount'),
 
 
 
