@@ -27,6 +27,17 @@ class LoanController extends Controller
         ->whereIn('status', ['approved', 'disbursed', 'overdue'])
         ->sum('amount');
 
+        dd([
+    'all_loans'=>Loan::where('group_id',$groupId)
+        ->get(['id','amount','status']),
+
+    'counted_loans'=>Loan::where('group_id',$groupId)
+        ->whereIn('status',['approved','disbursed','overdue'])
+        ->get(['id','amount','status']),
+
+    'totalLoaned'=>$totalLoaned
+]);
+
     $available = $totalContributions - $totalLoaned;
 
     $myLoans = Loan::with('repayments')
