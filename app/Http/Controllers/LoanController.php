@@ -34,10 +34,13 @@ class LoanController extends Controller
         ->latest()
         ->get();
 
-    $groupLoans = Loan::with(['user', 'approvals'])
-        ->where('group_id', $groupId)
-        ->latest()
-        ->get();
+    $groupLoans = Loan::with([
+        'user',
+        'approvals.approver'
+    ])
+    ->where('group_id', $groupId)
+    ->latest()
+    ->get();
 
     // ✅ NEW: check if current user is official
     $isOfficial = $group->members()
@@ -178,7 +181,7 @@ foreach ($officials as $official) {
     /**
      * ✅ CHAIRPERSON OVERRIDE APPROVAL SYSTEM
      */
-    public function approve(Loan $loan)
+    public function approve(Request $request, Loan $loan)
     {
         $group = $loan->group;
 
@@ -203,6 +206,7 @@ foreach ($officials as $official) {
             'loan_id' => $loan->id,
             'approved_by' => $userId,
             'decision' => 'approved',
+            'comment' => $request->comment,
             'approved_at' => now(),
         ]);
 
@@ -231,6 +235,56 @@ foreach ($officials as $official) {
 
         return back();
     }
+
+    public function reject(Request $request, Loan $loan)
+{
+    $group = $loan->group;
+
+
+    if (!$group->isLeader()) {
+        abort(403);
+    }
+
+
+    $request->validate([
+        'comment' => 'required|string|max:500'
+    ]);
+
+
+    $userId = auth()->id();
+
+
+    // prevent duplicate decision
+    $exists = LoanApproval::where('loan_id', $loan->id)
+        ->where('approved_by', $userId)
+        ->exists();
+
+
+    if ($exists) {
+        return back()->with('error','You already made a decision on this loan.');
+    }
+
+
+    LoanApproval::create([
+        'loan_id' => $loan->id,
+        'approved_by' => $userId,
+        'decision' => 'rejected',
+        'comment' => $request->comment,
+        'approved_at' => now()
+    ]);
+
+
+    $loan->update([
+        'status' => 'rejected'
+    ]);
+
+
+    return back()->with(
+        'success',
+        'Loan rejected successfully.'
+    );
+}
+
 
     public function disburse(Loan $loan)
     {
@@ -273,4 +327,27 @@ foreach ($officials as $official) {
 
         return back();
     }
+
+    public function show(Loan $loan)
+{
+    $group = $loan->group;
+
+    $groups = auth()->user()->groups;
+
+
+    $loan->load([
+        'user',
+        'approvals.approver',
+        'repayments'
+    ]);
+
+
+    return view('loans.show', compact(
+        'loan',
+        'group',
+        'groups'
+    ));
+}
+
+    
 }

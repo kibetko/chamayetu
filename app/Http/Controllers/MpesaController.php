@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Contribution;
 use App\Models\MpesaTransaction;
+use App\Models\LoanRepayment;
+use App\Models\LoanRepayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -33,10 +35,13 @@ class MpesaController extends Controller
     }
 
     public function stkPush(Request $request)
-    {
-        $request->validate([
-            'amount' => ['required', 'numeric', 'min:1']
-        ]);
+{
+    $request->validate([
+        'amount'=>'required|numeric|min:1',
+        'payment_type'=>'required'
+    ]);
+
+    $paymentType = $request->payment_type;
 
         $user = auth()->user();
 
@@ -73,9 +78,15 @@ class MpesaController extends Controller
                 "PartyA" => $phone,
                 "PartyB" => config('services.mpesa.shortcode'),
                 "PhoneNumber" => $phone,
-                "CallBackURL" => "https://untangled-uncolored-reseller.ngrok-free.dev/payments/callback",
-                "AccountReference" => "Contribution",
-                "TransactionDesc" => "Group Contribution"
+                "CallBackURL" => config('app.url').'/payments/callback',
+                "AccountReference" => ucfirst($paymentType),
+
+"TransactionDesc" =>
+$paymentType === 'loan_repayment'
+?
+"Loan Repayment"
+:
+"Group Contribution"
             ]
         );
 
@@ -94,17 +105,27 @@ class MpesaController extends Controller
             );
         }
 
-        MpesaTransaction::create([
-            'user_id' => $user->id,
-            'group_id' => session('active_group_id'),
-            'amount' => $amount,
-            'phone' => $phone,
-            'checkout_request_id' =>
-                $response['CheckoutRequestID'] ?? null,
-            'merchant_request_id' =>
-                $response['MerchantRequestID'] ?? null,
-            'status' => 'pending',
-        ]);
+       MpesaTransaction::create([
+
+    'user_id'=>$user->id,
+
+    'group_id'=>session('active_group_id'),
+
+    'loan_id'=>$request->loan_id,
+
+    'amount'=>$amount,
+
+    'payment_type'=>$request->payment_type ?? 'contribution',
+
+    'phone'=>$phone,
+
+    'checkout_request_id'=>$response['CheckoutRequestID'] ?? null,
+
+    'merchant_request_id'=>$response['MerchantRequestID'] ?? null,
+
+    'status'=>'pending',
+
+]);
 
         return back()->with(
             'success',
@@ -154,16 +175,50 @@ class MpesaController extends Controller
         'receipt_number' => $receiptNumber,
     ]);
 
+    if($transaction->payment_type === 'contribution'){
+
+
     Contribution::create([
-    'mpesa_transaction_id' => $transaction->id,
-    'group_id' => $transaction->group_id,
-    'user_id' => $transaction->user_id,
-    'amount' => $transaction->amount,
-    'month' => now()->month,
-    'year' => now()->year,
-    'status' => 'paid',
-    'paid_at' => now(),
+
+        'mpesa_transaction_id'=>$transaction->id,
+
+        'group_id'=>$transaction->group_id,
+
+        'user_id'=>$transaction->user_id,
+
+        'amount'=>$transaction->amount,
+
+        'month'=>now()->month,
+
+        'year'=>now()->year,
+
+        'status'=>'paid',
+
+        'paid_at'=>now(),
+
+    ]);
+
+
+
+}
+elseif($transaction->payment_type === 'loan_repayment'){
+
+
+    LoanRepayment::create([
+
+    'loan_id'=>$transaction->loan_id,
+
+    'amount'=>$transaction->amount,
+
+    'payment_method'=>'mpesa',
+
+    'reference'=>$receiptNumber,
+
+    'paid_at'=>now(),
+
 ]);
+
+}
 
     Log::info('Payment marked as paid', [
         'transaction_id' => $transaction->id,

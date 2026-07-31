@@ -82,53 +82,82 @@
 <!-- NAVBAR -->
 <nav class="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-slate-100">
 
-    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
 
-        <div class="flex items-center justify-between h-20">
+        <div class="flex items-center justify-between h-16 sm:h-20">
 
+
+            {{-- LOGO --}}
             <div class="flex items-center gap-2">
 
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500"></div>
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500">
+                </div>
 
-                <span class="font-extrabold text-2xl">
+
+                <span class="font-extrabold text-xl sm:text-2xl">
                     Chama<span class="text-blue-600">Yetu</span>
                 </span>
 
             </div>
 
+
+
+            {{-- DESKTOP LINKS --}}
             <div class="hidden lg:flex items-center gap-8">
 
-                <a href="#features" class="hover:text-blue-600 transition">
+                <a href="#features"
+                   class="hover:text-blue-600 transition">
                     Features
                 </a>
 
-                <a href="#how-it-works" class="hover:text-blue-600 transition">
+                <a href="#how-it-works"
+                   class="hover:text-blue-600 transition">
                     How It Works
                 </a>
 
-                <a href="#testimonials" class="hover:text-blue-600 transition">
+                <a href="#testimonials"
+                   class="hover:text-blue-600 transition">
                     Testimonials
                 </a>
 
-                <a href="#faq" class="hover:text-blue-600 transition">
+                <a href="#faq"
+                   class="hover:text-blue-600 transition">
                     FAQ
                 </a>
 
             </div>
 
-            <div class="flex gap-3">
+
+
+
+            {{-- ACTION BUTTONS --}}
+            <div class="flex items-center gap-2 sm:gap-3">
+
 
                 <a href="/login"
-                   class="px-5 py-2 border border-slate-300 rounded-xl hover:bg-slate-100 transition">
+                   class="px-3 sm:px-5 py-2 text-sm sm:text-base border border-slate-300 rounded-xl hover:bg-slate-100 transition">
+
                     Login
+
                 </a>
+
 
                 <a href="/register"
-                   class="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">
-                    Get Started
+                   class="px-3 sm:px-5 py-2 text-sm sm:text-base rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">
+
+                    <span class="hidden sm:inline">
+                        Get Started
+                    </span>
+
+                    <span class="sm:hidden">
+                        Sign Up
+                    </span>
+
                 </a>
 
+
             </div>
+
 
         </div>
 
@@ -422,7 +451,7 @@
 
     </div>
 
-</div>
+    </div>
             <div class="grid lg:grid-cols-4 gap-8 relative">
 
                 <!-- Step 1 -->

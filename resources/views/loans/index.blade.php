@@ -49,7 +49,14 @@
                             <div class="text-xs text-slate-500">Balance: KES {{ number_format($loan->remaining_balance) }}</div>
                         </div>
                         <div class="text-sm">
-                            <span class="px-2 py-1 rounded-full text-xs {{ $loan->status === 'paid' ? 'bg-green-100 text-green-700' : ($loan->status === 'approved' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700') }}">{{ ucfirst($loan->status) }}</span>
+                            <span class="px-2 py-1 rounded-full text-xs {{ $loan->status === 'approved'
+                    ? 'bg-green-100 text-green-700'
+                    : ($loan->status === 'rejected'
+                        ? 'bg-red-100 text-red-700'
+                        : ($loan->status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-blue-100 text-blue-700'))
+                }}</span>
                         </div>
                     </div>
                 </div>
@@ -76,7 +83,12 @@
 
                     <div class="flex items-center gap-2">
                         <div class="text-sm font-semibold text-slate-800">
-                            {{ $loan->user->name }}
+                            <a href="{{ route('loans.show',$loan) }}"
+class="text-emerald-600 hover:underline">
+
+{{ $loan->user->name }}
+
+</a>
                         </div>
 
                         <span class="text-xs px-2 py-1 rounded-full
@@ -110,24 +122,221 @@
                         </div>
                     </div>
 
+                    {{-- APPROVAL TIMELINE --}}
+
+@if($loan->approvals->count())
+
+<div class="mt-5 border-t pt-4">
+
+    <h3 class="text-xs font-semibold text-slate-500 uppercase mb-3">
+        Approval History
+    </h3>
+
+
+    <div class="space-y-3">
+
+
+    @foreach($loan->approvals as $approval)
+
+
+    <div class="flex gap-3">
+
+
+        {{-- ICON --}}
+
+        <div class="mt-1">
+
+            @if($approval->decision === 'approved')
+
+                <div class="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs">
+                    ✓
+                </div>
+
+            @else
+
+                <div class="h-6 w-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs">
+                    ✕
+                </div>
+
+            @endif
+
+        </div>
+
+
+
+        {{-- DETAILS --}}
+
+        <div class="flex-1">
+
+
+            <div class="flex justify-between">
+
+
+                <p class="text-sm font-medium text-slate-700">
+
+                    {{ $approval->approver->name ?? 'Unknown' }}
+
+                </p>
+
+
+                <span class="text-xs text-slate-400">
+
+                    {{ $approval->approved_at 
+                        ? \Carbon\Carbon::parse($approval->approved_at)->diffForHumans()
+                        : '' 
+                    }}
+
+                </span>
+
+
+            </div>
+
+
+
+            <p class="text-xs
+                {{ $approval->decision === 'approved'
+                    ? 'text-green-600'
+                    : 'text-red-600'
+                }}">
+
+                {{ ucfirst($approval->decision) }}
+
+            </p>
+
+
+
+            @if($approval->comment)
+
+            <p class="mt-1 text-xs text-slate-500 italic">
+
+                "{{ $approval->comment }}"
+
+            </p>
+
+            @endif
+
+
+
+        </div>
+
+
+    </div>
+
+
+    @endforeach
+
+
+    </div>
+
+</div>
+
+@endif
+
                 </div>
 
                 {{-- RIGHT ACTIONS --}}
                 <div class="flex flex-col gap-2">
 
-                    @if(
+                   @if(
     $loan->status === 'pending'
     && $loan->user_id !== auth()->id()
     && $isOfficial
 )
-    <form action="{{ route('loans.approve', $loan) }}" method="POST">
-        @csrf
 
-        <button
-            class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition">
-            Approve
-        </button>
-    </form>
+<div class="flex gap-2">
+
+    {{-- APPROVE --}}
+    <form action="{{ route('loans.approve',$loan) }}" method="POST">
+
+@csrf
+
+
+<textarea
+name="comment"
+placeholder="Approval comment (optional)"
+class="w-full border rounded-lg p-2 text-sm mb-2"></textarea>
+
+
+<button
+class="bg-green-600 text-white px-3 py-1 rounded">
+Approve
+</button>
+
+
+</form>
+
+
+    {{-- REJECT --}}
+    <button
+        onclick="document.getElementById('reject-{{ $loan->id }}').classList.remove('hidden')"
+        class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
+
+        Reject
+
+    </button>
+
+
+</div>
+
+
+{{-- REJECT MODAL --}}
+<div
+id="reject-{{ $loan->id }}"
+class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+
+<div class="bg-white rounded-xl p-6 w-full max-w-md">
+
+<h3 class="font-semibold text-lg mb-4">
+Reject Loan
+</h3>
+
+
+<form action="{{ route('loans.reject',$loan) }}" method="POST">
+
+@csrf
+
+
+<textarea
+name="comment"
+required
+rows="4"
+class="w-full border rounded-lg p-3"
+placeholder="Reason for rejection">
+</textarea>
+
+
+<div class="flex justify-end gap-3 mt-4">
+
+
+<button
+type="button"
+onclick="document.getElementById('reject-{{ $loan->id }}').classList.add('hidden')"
+class="px-4 py-2 border rounded-lg">
+
+Cancel
+
+</button>
+
+
+<button
+class="bg-red-600 text-white px-4 py-2 rounded-lg">
+
+Reject Loan
+
+</button>
+
+
+</div>
+
+
+</form>
+
+
+</div>
+
+</div>
+
 @endif
 
                     @if($loan->status == 'approved' && $group->isChairperson())

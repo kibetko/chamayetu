@@ -2,13 +2,12 @@
     :group="$group"
     :groups="$groups">
 
-    <div class="rounded-2xl bg-[#D9E3F4] p-6">
+    <div class="rounded-2xl bg-[#D9E3F4] p-3 sm:p-4 lg:p-6">
 
         <!-- Header -->
-        <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-
+<div class="mb-6 flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-slate-800">
+                <h1 class="text-2xl sm:text-3xl font-bold text-slate-800">
                     Group Members
                 </h1>
 
@@ -18,9 +17,9 @@
             </div>
 
             <!-- Controls -->
-            <div class="flex items-center gap-3 w-full md:w-auto">
+            <div class="flex items-center justify-between gap-3">
 
-                <div class="relative w-full md:w-80">
+                <div class="relative w-full sm:flex-1 md:w-80">
                     <label for="memberSearch" class="sr-only">Search members</label>
                     <input
                         type="text"
@@ -66,106 +65,135 @@
         @endphp
 
         <!-- Cards (mobile) -->
-        <div id="membersCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:hidden mb-6">
-            @foreach($members as $member)
-                <div class="member-card bg-white rounded-xl p-4 shadow-sm" data-name="{{ strtolower($member->name) }}" data-role="{{ strtolower($member->pivot->role ?? 'member') }}" data-email="{{ strtolower($member->email ?? '') }}" data-phone="{{ strtolower($member->phone_no ?? '') }}">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold">
-                                {{ strtoupper(substr($member->name, 0, 1)) }}
-                            </div>
-                            <div>
-                                <div class="font-medium text-slate-800">{{ $member->name }}</div>
-                                <div class="text-xs text-slate-400">{{ $member->email ?? '-' }}</div>
-                            </div>
-                        </div>
+<div id="membersCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:hidden mb-6">
 
-                        <div class="text-right">
-                            <div class="text-xs text-slate-500">{{ $member->pivot->joined_at ? \Carbon\Carbon::parse($member->pivot->joined_at)->format('d M Y') : '-' }}</div>
-                            <div class="mt-2">
-                                <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $member->pivot->role === 'chairperson' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700' }}">
-                                    {{ ucfirst($member->pivot->role ?? 'member') }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+@foreach($members as $member)
 
-                    <div class="mt-4 flex items-center justify-between text-sm text-slate-600">
-                        <div>{{ $member->phone_no ?? '-' }}</div>
-                        <div class="flex items-center gap-2">
-                            <a href="{{ route('members.show', [$group->id, $member->id]) }}" class="text-emerald-600 text-sm">View</a>
-                            @if(method_exists($group, 'isChairperson') ? $group->isChairperson() : false)
-                                <a href="{{ route('members.edit', [$group->id, $member->id]) }}" class="text-slate-600 text-sm">Edit</a>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
+<div class="member-card bg-white rounded-xl p-4 shadow-sm"
+    data-name="{{ strtolower($member->name) }}"
+    data-role="{{ strtolower($member->pivot->role ?? 'member') }}"
+    data-email="{{ strtolower($member->email ?? '') }}"
+    data-phone="{{ strtolower($member->phone_no ?? '') }}">
 
-        <!-- Table (md+) -->
-        <div class="hidden md:block overflow-hidden rounded-2xl bg-white shadow-lg">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-700">
-                            <th class="px-6 py-4 text-left text-sm font-semibold">Name</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold">Email</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold">Phone</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold">Role</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold">Joined</th>
-                            <th class="px-6 py-4 text-left text-sm font-semibold">Actions</th>
-                        </tr>
-                    </thead>
 
-                    <tbody id="membersTable">
-                        @forelse($members as $member)
-                            <tr class="member-row border-b hover:bg-slate-50 transition" data-name="{{ strtolower($member->name) }}" data-role="{{ strtolower($member->pivot->role ?? 'member') }}" data-email="{{ strtolower($member->email ?? '') }}" data-phone="{{ strtolower($member->phone_no ?? '') }}">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 font-semibold text-emerald-700">
-                                            {{ strtoupper(substr($member->name, 0, 1)) }}
-                                        </div>
-                                        <div>
-                                            <div class="font-medium text-slate-800">{{ $member->name }}</div>
-                                        </div>
-                                    </div>
-                                </td>
+    {{-- TOP ROW --}}
+    <div class="flex items-center justify-between gap-3">
 
-                                <td class="px-6 py-4 text-slate-600">{{ $member->email ?? '-' }}</td>
 
-                                <td class="px-6 py-4 text-slate-600">{{ $member->phone_no ?? '-' }}</td>
+        {{-- LEFT: Avatar + Name --}}
+        <div class="flex items-center gap-3 min-w-0">
 
-                                <td class="px-6 py-4">
-                                    <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                                        {{ ucfirst($member->pivot->role ?? 'member') }}
-                                    </span>
-                                </td>
 
-                                <td class="px-6 py-4 text-slate-600">
-                                    {{ $member->pivot->joined_at ? \Carbon\Carbon::parse($member->pivot->joined_at)->format('d M Y') : '-' }}
-                                </td>
+            <div class="h-10 w-10 shrink-0 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-semibold">
 
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <a href="{{ route('members.show', [$group->id, $member->id]) }}" class="text-emerald-600 text-sm">View</a>
-                                        @if(method_exists($group, 'isChairperson') ? $group->isChairperson() : false)
-                                            <a href="{{ route('members.edit', [$group->id, $member->id]) }}" class="text-slate-600 text-sm">Edit</a>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="py-10 text-center text-slate-500">No members found.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                {{ strtoupper(substr($member->name, 0, 1)) }}
+
             </div>
+
+
+            <div class="min-w-0">
+
+                <div class="font-medium text-slate-800 truncate">
+
+                    {{ $member->name }}
+
+                </div>
+
+
+                <div class="text-xs text-slate-400 truncate">
+
+                    {{ $member->email ?? '-' }}
+
+                </div>
+
+
+            </div>
+
+
         </div>
+
+
+
+        {{-- RIGHT: Role + Date --}}
+        <div class="text-right shrink-0">
+
+
+            <div class="text-xs text-slate-500">
+
+                {{ $member->pivot->joined_at 
+                    ? \Carbon\Carbon::parse($member->pivot->joined_at)->format('d M Y') 
+                    : '-' 
+                }}
+
+            </div>
+
+
+            <div class="mt-2">
+
+                <span class="rounded-full px-3 py-1 text-xs font-semibold
+                    {{ $member->pivot->role === 'chairperson'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-slate-100 text-slate-700' }}">
+
+                    {{ ucfirst($member->pivot->role ?? 'member') }}
+
+                </span>
+
+            </div>
+
+
+        </div>
+
 
     </div>
+
+
+
+    {{-- BOTTOM ROW --}}
+    <div class="mt-4 flex items-center justify-between text-sm text-slate-600">
+
+
+        <div class="truncate">
+
+            {{ $member->phone_no ?? '-' }}
+
+        </div>
+
+
+
+        <div class="flex items-center gap-3">
+
+            <a href="{{ route('members.show', [$group->id, $member->id]) }}"
+               class="text-emerald-600 text-sm font-medium">
+
+                View
+
+            </a>
+
+
+            @if(method_exists($group, 'isChairperson') ? $group->isChairperson() : false)
+
+            <a href="{{ route('members.edit', [$group->id, $member->id]) }}"
+               class="text-slate-600 text-sm font-medium">
+
+                Edit
+
+            </a>
+
+            @endif
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+@endforeach
+
+</div>
 
     @push('scripts')
     <script>

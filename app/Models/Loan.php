@@ -26,6 +26,12 @@ class Loan extends Model
     'due_date'
 ];
 
+    protected $casts = [
+    'approved_at' => 'datetime',
+    'disbursed_at' => 'datetime',
+    'due_date' => 'datetime',
+];
+
     public function group()
     {
         return $this->belongsTo(Group::class);
@@ -36,9 +42,10 @@ class Loan extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function approvals()
+   public function approvals()
 {
-    return $this->hasMany(LoanApproval::class);
+    return $this->hasMany(LoanApproval::class)
+        ->orderBy('approved_at','asc');
 }
 
     public function repayments()
@@ -55,7 +62,7 @@ class Loan extends Model
 public function getRemainingBalanceAttribute()
 {
     return $this->total_payable
-        + $this->penalty_amount
+        + ($this->penalty_amount ?? 0)
         - $this->repayments()->sum('amount');
 }
 

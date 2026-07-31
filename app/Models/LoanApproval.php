@@ -7,9 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class LoanApproval extends Model
 {
-
     use HasFactory;
+
     protected $guarded = [];
+
+    protected $casts = [
+        'approved_at' => 'datetime',
+    ];
 
     public function loan()
     {

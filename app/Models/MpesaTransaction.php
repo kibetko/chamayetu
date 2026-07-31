@@ -6,13 +6,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class MpesaTransaction extends Model
 {
-    protected $guarded = [];
 
-    public function contribution()
-    {
-        return $this->hasOne(
-            Contribution::class,
-            'mpesa_transaction_id'
-        );
-    }
+protected $guarded=[];
+
+
+public function contribution()
+{
+    return $this->hasOne(
+        Contribution::class
+    );
+}
+
+
+public function loan()
+{
+    return $this->belongsTo(
+        Loan::class
+    );
+}
+
 }
