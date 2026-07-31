@@ -92,8 +92,7 @@ Route::post(
     [GroupController::class, 'rejectJoinRequest']
 )->name('join-requests.reject');
 
-Route::get('/loans/{loan}', [LoanController::class,'show'])
-    ->name('loans.show');
+
 
 Route::get('/members', [
         MemberController::class,
@@ -165,6 +164,8 @@ Route::post('/loans/{loan}/disburse', [
 ])->name('loans.disburse');
 
 
+
+
 Route::post(
     '/notifications/{notification}/read',
     [NotificationController::class, 'markAsRead']
@@ -175,5 +176,8 @@ Route::post(
 [LoanRepaymentController::class,'store']
 )
 ->name('loans.repay');
+
+Route::get('/loans/{loan}', [LoanController::class,'show'])
+    ->name('loans.show');
 
 require __DIR__.'/auth.php';
