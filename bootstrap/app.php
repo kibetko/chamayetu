@@ -11,17 +11,49 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+
     ->withMiddleware(function (Middleware $middleware): void {
 
-    $middleware->validateCsrfTokens(
-        except: [
-            'payments/callback',
-        ]
-    );
+        /*
+        |--------------------------------------------------------------------------
+        | Global Middleware
+        |--------------------------------------------------------------------------
+        |
+        | This runs on every request.
+        | Updates the logged-in user's last_seen_at timestamp.
+        |
+        */
 
-})
+        $middleware->append([
+            \App\Http\Middleware\UpdateLastSeen::class,
+        ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CSRF Exceptions
+        |--------------------------------------------------------------------------
+        |
+        | M-Pesa sends callbacks directly to this URL.
+        | We exclude it from CSRF verification.
+        |
+        */
+
+        $middleware->validateCsrfTokens(
+            except: [
+                'payments/callback',
+            ]
+        );
+
+
+    })
+
     ->withExceptions(function (Exceptions $exceptions): void {
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
         );
-    })->create();
+
+    })
+
+    ->create();
