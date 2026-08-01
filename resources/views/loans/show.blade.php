@@ -151,68 +151,42 @@ KES {{ number_format($loan->remaining_balance) }}
 
     {{-- REPAYMENT --}}
 
-@if(in_array($loan->status,['approved','disbursed','overdue']))
+        @if(
+    auth()->id() === $loan->user_id &&
+    in_array($loan->status, ['approved', 'disbursed', 'overdue'])
+)
 
 <div class="bg-white rounded-2xl shadow-sm p-4 sm:p-6 mb-6">
 
+    <h2 class="font-semibold text-lg mb-4">
+        Make Repayment
+    </h2>
 
-<h2 class="font-semibold text-lg mb-4">
+    <form method="POST" action="{{ route('mpesa.stk') }}">
+        @csrf
 
-Make Repayment
+        <input type="hidden" name="payment_type" value="loan_repayment">
 
-</h2>
+        <input type="hidden" name="loan_id" value="{{ $loan->id }}">
 
+        <label class="block text-sm text-slate-600 mb-2">
+            Amount to repay
+        </label>
 
+        <input
+            type="number"
+            name="amount"
+            placeholder="Enter amount"
+            max="{{ $loan->remaining_balance }}"
+            required
+            class="w-full border rounded-xl px-4 py-3 mb-4 focus:ring-2 focus:ring-emerald-200 focus:outline-none">
 
-<form method="POST" action="{{ route('mpesa.stk') }}">
+        <button
+            class="w-full sm:w-auto bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700">
+            Pay Loan via M-Pesa
+        </button>
 
-@csrf
-
-
-<input type="hidden"
-name="payment_type"
-value="loan_repayment">
-
-
-<input type="hidden"
-name="loan_id"
-value="{{ $loan->id }}">
-
-
-
-<label class="block text-sm text-slate-600 mb-2">
-
-Amount to repay
-
-</label>
-
-
-
-<input
-type="number"
-name="amount"
-placeholder="Enter amount"
-max="{{ $loan->remaining_balance }}"
-required
-
-class="w-full border rounded-xl px-4 py-3 mb-4 focus:ring-2 focus:ring-emerald-200 focus:outline-none">
-
-
-
-
-
-<button
-
-class="w-full sm:w-auto bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700">
-
-Pay Loan via M-Pesa
-
-</button>
-
-
-
-</form>
-
+    </form>
 
 </div>
 
