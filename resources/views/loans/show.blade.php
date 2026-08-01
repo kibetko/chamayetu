@@ -149,6 +149,10 @@ KES {{ number_format($loan->remaining_balance) }}
 
 {{-- REPAYMENT --}}
 
+    {{-- REPAYMENT --}}
+
+@if(in_array($loan->status,['approved','disbursed','overdue']))
+
 <div class="bg-white rounded-2xl shadow-sm p-4 sm:p-6 mb-6">
 
 
@@ -173,8 +177,6 @@ value="loan_repayment">
 <input type="hidden"
 name="loan_id"
 value="{{ $loan->id }}">
-
-
 
 
 
@@ -213,6 +215,8 @@ Pay Loan via M-Pesa
 
 
 </div>
+
+@endif
 
 
 
