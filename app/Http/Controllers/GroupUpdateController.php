@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Group;
 use App\Models\GroupUpdate;
 use Illuminate\Http\Request;
+use App\Notifications\ChamaNotification;
 
 class GroupUpdateController extends Controller
 {
@@ -34,13 +35,33 @@ class GroupUpdateController extends Controller
         }
         
 
-        GroupUpdate::create([
+        $update = GroupUpdate::create([
             'group_id' => $group->id,
             'user_id' => auth()->id(),
             'title' => $request->title,
             'content' => $request->content,
             'attachment' => $path,
         ]);
+        // Notify all group members
+
+            $members = $group->members()
+                ->wherePivot('status','active')
+                ->where('users.id', '!=', auth()->id())
+                ->get();
+
+            foreach ($members as $member) {
+
+                $member->notify(
+                    new ChamaNotification(
+                        'New Group Update',
+                        auth()->user()->name .
+                        ' posted: ' .
+                        $update->title,
+                        url('/dashboard')
+                    )
+                );
+
+            }
 
         return back()->with(
             'success',

@@ -7,7 +7,7 @@ use App\Models\Group;
 use App\Models\Contribution;
 use App\Models\LoanApproval;
 use App\Models\LoanRepayment;
-use App\Notifications\LoanSubmittedNotification;
+use App\Notifications\ChamaNotification;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -168,16 +168,24 @@ $officials = $group->members()
     ])
     ->get();
 
-foreach ($officials as $official) {
-    $official->notify(
-        new LoanSubmittedNotification($loan)
-    );
+           foreach ($officials as $official) {
+
+                $official->notify(
+                    new ChamaNotification(
+                        'New Loan Request',
+                        auth()->user()->name .
+                        ' has requested a loan of KES ' .
+                        number_format($loan->amount),
+                        url('/loans/'.$loan->id)
+                    )
+                );
+
 }
 
-        return redirect()
-            ->route('loans.index')
-            ->with('success', 'Loan request submitted successfully.');
-    }
+                    return redirect()
+                        ->route('loans.index')
+                        ->with('success', 'Loan request submitted successfully.');
+                }
 
     /**
      * ✅ CHAIRPERSON OVERRIDE APPROVAL SYSTEM
@@ -218,12 +226,23 @@ foreach ($officials as $official) {
          */
         if ($isChairperson) {
 
-            $loan->update([
-                'status' => 'approved',
-                'approved_at' => now()
-            ]);
+    $loan->update([
+        'status' => 'approved',
+        'approved_at' => now()
+    ]);
 
-        } else {
+
+    $loan->user->notify(
+        new ChamaNotification(
+            'Loan Approved',
+            'Your loan request of KES ' .
+            number_format($loan->amount) .
+            ' has been approved.',
+            url('/loans/'.$loan->id)
+        )
+    );
+
+}else {
 
             // fallback rule (you can adjust threshold later)
             if ($loan->approvals()->count() >= 3) {
@@ -233,6 +252,7 @@ foreach ($officials as $official) {
                 ]);
             }
         }
+
 
         return back();
     }
@@ -278,6 +298,15 @@ foreach ($officials as $official) {
     $loan->update([
         'status' => 'rejected'
     ]);
+    $loan->user->notify(
+    new ChamaNotification(
+        'Loan Rejected',
+        'Your loan request of KES ' .
+        number_format($loan->amount) .
+        ' was rejected.',
+        url('/loans/'.$loan->id)
+    )
+);
 
 
     return back()->with(
@@ -304,6 +333,15 @@ foreach ($officials as $official) {
             'disbursed_at' => now(),
             'due_date' => now()->addDays($loan->duration_days)
         ]);
+        $loan->user->notify(
+    new ChamaNotification(
+        'Loan Disbursed',
+        'Your loan of KES ' .
+        number_format($loan->amount) .
+        ' has been disbursed.',
+        url('/loans/'.$loan->id)
+    )
+);
 
         return back()->with('success', 'Loan disbursed successfully');
     }
@@ -319,12 +357,32 @@ foreach ($officials as $official) {
             'amount' => $request->amount,
             'paid_at' => now()
         ]);
+        $loan->user->notify(
+    new ChamaNotification(
+        'Repayment Received',
+        'Your repayment of KES ' .
+        number_format($request->amount) .
+        ' has been received.',
+        url('/loans/'.$loan->id)
+    )
+);
 
         if ($loan->remaining_balance <= 0) {
-            $loan->update([
-                'status' => 'completed'
-            ]);
-        }
+
+    $loan->update([
+        'status' => 'completed'
+    ]);
+
+
+    $loan->user->notify(
+        new ChamaNotification(
+            'Loan Completed',
+            'Congratulations, your loan has been fully repaid.',
+            url('/loans/'.$loan->id)
+        )
+    );
+
+}
 
         return back();
     }

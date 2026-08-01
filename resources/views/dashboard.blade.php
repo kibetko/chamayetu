@@ -127,12 +127,7 @@
                     KES {{ number_format($loanStats['outstanding']) }}
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow p-6">
-
-    
-
-
-</div>
+            
         </div>
 
         {{-- Infographic: monthly contributions + top contributors --}}
@@ -212,13 +207,44 @@ $monthlyContribData = $monthlyContributions->pluck('total');
                     </div>
 
                     <div class="flex-1">
-                        <div class="text-sm text-gray-600">Active / Paid</div>
-                        <div class="mt-4 text-sm text-gray-600">Defaulted</div>
+
+                        <div class="text-sm text-gray-600">
+                            Total Loaned
+                        </div>
+
+                        <div class="font-semibold">
+                            KES {{ number_format($loanStats['total_loaned']) }}
+                        </div>
+
+
+                        <div class="mt-4 text-sm text-gray-600">
+                            Repaid
+                        </div>
+
+                        <div class="font-semibold text-green-600">
+                            KES {{ number_format($loanStats['total_repaid']) }}
+                        </div>
+
+
+                        <div class="mt-4 text-sm text-gray-600">
+                            Outstanding
+                        </div>
+
+                        <div class="font-semibold text-red-600">
+                            KES {{ number_format($loanStats['outstanding']) }}
+                        </div>
+
 
                         <div class="mt-6">
-                            <div class="text-xs text-gray-500">Healthy</div>
-                            <div class="text-2xl font-bold text-[#063a2a]">{{ number_format($recoveryRate,1) }}%</div>
+                            <div class="text-xs text-gray-500">
+                                Recovery Rate
+                            </div>
+
+                            <div class="text-2xl font-bold text-[#063a2a]">
+                                {{ number_format($recoveryRate,1) }}%
+                            </div>
                         </div>
+
                     </div>
                 </div>
             </div>
