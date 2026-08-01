@@ -1,363 +1,564 @@
-<x-layouts.group :group="$group" :groups="$groups">
+<x-layouts.group 
+    :group="$group" 
+    :groups="$groups">
 
-<div class="p-6 max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto p-3 sm:p-5 lg:p-8">
 
-    <div class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-[#063a2a]">Loans</h1>
-            <p class="text-sm text-gray-500 mt-1">Apply, approve and manage group loans.</p>
-        </div>
 
-        <a href="{{ route('loans.apply') }}" class="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow hover:bg-emerald-700">+ Apply for Loan</a>
+{{-- HEADER --}}
+<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+
+    <div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-[#063a2a]">
+            Loans
+        </h1>
+
+        <p class="text-sm text-gray-500 mt-1">
+            Apply, approve and manage group loans.
+        </p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white rounded-xl p-4 shadow flex items-center justify-between">
-            <div>
-                <div class="text-xs text-gray-500">Total Contributions</div>
-                <div class="text-xl font-semibold text-emerald-700">KES {{ number_format($totalContributions) }}</div>
-            </div>
-            <div class="text-2xl text-emerald-200">💵</div>
-        </div>
 
-        <div class="bg-white rounded-xl p-4 shadow flex items-center justify-between">
-            <div>
-                <div class="text-xs text-gray-500">Total Loaned</div>
-                <div class="text-xl font-semibold text-blue-600">KES {{ number_format($totalLoaned) }}</div>
-            </div>
-            <div class="text-2xl text-blue-100">🏦</div>
-        </div>
+    <a href="{{ route('loans.apply') }}"
+       class="w-full sm:w-auto text-center bg-emerald-600 text-white px-5 py-3 rounded-xl shadow hover:bg-emerald-700 transition">
 
-        <div class="bg-white rounded-xl p-4 shadow flex items-center justify-between">
-            <div>
-                <div class="text-xs text-gray-500">Available</div>
-                <div class="text-xl font-semibold text-orange-600">KES {{ number_format($available) }}</div>
-            </div>
-            <div class="text-2xl text-orange-100">🪙</div>
-        </div>
-    </div>
+        + Apply for Loan
 
-    <div class="grid lg:grid-cols-2 gap-6">
-        <div class="bg-white rounded-xl p-6 shadow">
-            <h2 class="font-semibold mb-4">My Loans</h2>
+    </a>
 
-            @forelse($myLoans as $loan)
-                <div class="border-b py-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-sm font-medium">KES {{ number_format($loan->amount) }}</div>
-                            <div class="text-xs text-slate-500">Balance: KES {{ number_format($loan->remaining_balance) }}</div>
-                        </div>
-                        <div class="text-sm">
-                            <span class="px-2 py-1 rounded-full text-xs {{ $loan->status === 'approved'
-                    ? 'bg-green-100 text-green-700'
-                    : ($loan->status === 'rejected'
-                        ? 'bg-red-100 text-red-700'
-                        : ($loan->status === 'pending'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-blue-100 text-blue-700'))
-                }}</span>
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <div class="py-6 text-slate-500">You have no loans.</div>
-            @endforelse
-        </div>
+</div>
 
-        <div class="bg-white rounded-xl p-6 shadow">
-    <h2 class="font-semibold mb-4">Group Loans</h2>
 
-    @forelse($groupLoans as $loan)
 
-        @php
-            $progress = ($loan->approval_count / 3) * 100;
-        @endphp
 
-        <div class="border-b py-5 hover:bg-slate-50 transition rounded-lg px-3">
+{{-- SUMMARY CARDS --}}
 
-            <div class="flex items-start justify-between">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
 
-                {{-- LEFT INFO --}}
-                <div class="space-y-2">
 
-                    <div class="flex items-center gap-2">
-                        <div class="text-sm font-semibold text-slate-800">
-                            <a href="{{ route('loans.show',$loan) }}"
-class="text-emerald-600 hover:underline">
+<div class="bg-white rounded-2xl p-5 shadow-sm flex justify-between items-center">
+
+<div>
+
+<p class="text-xs text-gray-500">
+Total Contributions
+</p>
+
+<h2 class="text-xl font-bold text-emerald-700 mt-1">
+KES {{ number_format($totalContributions) }}
+</h2>
+
+</div>
+
+<div class="text-3xl">
+💵
+</div>
+
+</div>
+
+
+
+<div class="bg-white rounded-2xl p-5 shadow-sm flex justify-between items-center">
+
+<div>
+
+<p class="text-xs text-gray-500">
+Total Loaned
+</p>
+
+<h2 class="text-xl font-bold text-blue-600 mt-1">
+KES {{ number_format($totalLoaned) }}
+</h2>
+
+</div>
+
+<div class="text-3xl">
+🏦
+</div>
+
+</div>
+
+
+
+
+<div class="bg-white rounded-2xl p-5 shadow-sm flex justify-between items-center sm:col-span-2 lg:col-span-1">
+
+<div>
+
+<p class="text-xs text-gray-500">
+Available Funds
+</p>
+
+<h2 class="text-xl font-bold text-orange-600 mt-1">
+KES {{ number_format($available) }}
+</h2>
+
+</div>
+
+
+<div class="text-3xl">
+🪙
+</div>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+
+
+
+
+{{-- MY LOANS --}}
+
+<div class="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
+
+
+<h2 class="font-semibold text-lg text-slate-800 mb-4">
+My Loans
+</h2>
+
+
+
+@forelse($myLoans as $loan)
+
+
+<div class="border-b last:border-none py-4">
+
+
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+
+<div>
+
+
+<p class="font-semibold text-slate-800">
+
+KES {{ number_format($loan->amount) }}
+
+</p>
+
+
+<p class="text-sm text-slate-500">
+
+Balance:
+KES {{ number_format($loan->remaining_balance) }}
+
+</p>
+
+
+</div>
+
+
+
+<span
+class="inline-flex w-fit px-3 py-1 rounded-full text-xs font-semibold
+
+{{ $loan->status === 'approved'
+    ? 'bg-green-100 text-green-700'
+    : ($loan->status === 'rejected'
+        ? 'bg-red-100 text-red-700'
+        : ($loan->status === 'pending'
+            ? 'bg-yellow-100 text-yellow-700'
+            : 'bg-blue-100 text-blue-700'))
+}}">
+
+
+{{ ucfirst($loan->status) }}
+
+
+</span>
+
+
+
+</div>
+
+
+</div>
+
+
+
+@empty
+
+
+<div class="py-8 text-center text-slate-500">
+
+You have no loans.
+
+</div>
+
+
+@endforelse
+
+
+
+</div>
+
+
+
+
+
+
+
+{{-- GROUP LOANS --}}
+
+<div class="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
+
+
+<h2 class="font-semibold text-lg text-slate-800 mb-5">
+
+Group Loans
+
+</h2>
+
+
+
+@forelse($groupLoans as $loan)
+
+
+
+@php
+
+$progress = min(($loan->approval_count / 3) * 100,100);
+
+@endphp
+
+
+
+
+<div class="border rounded-xl p-4 mb-4 hover:bg-slate-50 transition">
+
+
+
+
+
+<div class="flex flex-col sm:flex-row sm:justify-between gap-4">
+
+
+<div class="flex-1">
+
+
+
+<div class="flex flex-wrap items-center gap-2">
+
+
+<a href="{{ route('loans.show',$loan) }}"
+class="font-semibold text-emerald-600 hover:underline">
 
 {{ $loan->user->name }}
 
 </a>
-                        </div>
 
-                        <span class="text-xs px-2 py-1 rounded-full
-                            {{ $loan->status === 'approved'
-                                ? 'bg-green-100 text-green-700'
-                                : ($loan->status === 'pending'
-                                    ? 'bg-yellow-100 text-yellow-700'
-                                    : 'bg-blue-100 text-blue-700') }}">
 
-                            {{ ucfirst($loan->status) }}
 
-                        </span>
-                    </div>
+<span class="px-3 py-1 rounded-full text-xs font-semibold
 
-                    <div class="text-sm text-slate-600 font-medium">
-                        KES {{ number_format($loan->amount) }}
-                    </div>
+{{ $loan->status === 'approved'
+? 'bg-green-100 text-green-700'
+: ($loan->status === 'pending'
+? 'bg-yellow-100 text-yellow-700'
+: 'bg-blue-100 text-blue-700')
+}}">
 
-                    {{-- ⭐ ROUND PROGRESS BAR --}}
-                    <div class="w-48">
-                        <div class="flex justify-between text-xs text-slate-500 mb-1">
-                            <span>Approvals</span>
-                            <span>{{ $loan->approval_count }}/3</span>
-                        </div>
 
-                        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                            <div
-                                class="h-2 bg-gradient-to-r from-emerald-400 to-green-600 rounded-full transition-all duration-500"
-                                style="width: {{ $progress }}%">
-                            </div>
-                        </div>
-                    </div>
+{{ ucfirst($loan->status) }}
 
-                    {{-- APPROVAL TIMELINE --}}
+
+</span>
+
+
+</div>
+
+
+
+
+<p class="mt-2 font-medium text-slate-700">
+
+KES {{ number_format($loan->amount) }}
+
+</p>
+
+
+
+
+
+{{-- APPROVAL BAR --}}
+
+<div class="mt-4 max-w-xs">
+
+
+<div class="flex justify-between text-xs text-slate-500 mb-1">
+
+<span>
+Approvals
+</span>
+
+
+<span>
+{{ $loan->approval_count }}/3
+</span>
+
+
+</div>
+
+
+<div class="h-2 bg-slate-200 rounded-full overflow-hidden">
+
+<div class="h-full bg-emerald-600 rounded-full"
+style="width:{{ $progress }}%">
+</div>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+{{-- APPROVAL HISTORY --}}
+
 
 @if($loan->approvals->count())
 
+
 <div class="mt-5 border-t pt-4">
 
-    <h3 class="text-xs font-semibold text-slate-500 uppercase mb-3">
-        Approval History
-    </h3>
 
+<p class="text-xs uppercase text-slate-500 font-semibold mb-3">
 
-    <div class="space-y-3">
+Approval History
 
-
-    @foreach($loan->approvals as $approval)
-
-
-    <div class="flex gap-3">
-
-
-        {{-- ICON --}}
-
-        <div class="mt-1">
-
-            @if($approval->decision === 'approved')
-
-                <div class="h-6 w-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs">
-                    ✓
-                </div>
-
-            @else
-
-                <div class="h-6 w-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs">
-                    ✕
-                </div>
-
-            @endif
-
-        </div>
+</p>
 
 
 
-        {{-- DETAILS --}}
-
-        <div class="flex-1">
+<div class="space-y-3">
 
 
-            <div class="flex justify-between">
-
-
-                <p class="text-sm font-medium text-slate-700">
-
-                    {{ $approval->approver->name ?? 'Unknown' }}
-
-                </p>
-
-
-                <span class="text-xs text-slate-400">
-
-                    {{ $approval->approved_at 
-                        ? \Carbon\Carbon::parse($approval->approved_at)->diffForHumans()
-                        : '' 
-                    }}
-
-                </span>
-
-
-            </div>
+@foreach($loan->approvals as $approval)
 
 
 
-            <p class="text-xs
-                {{ $approval->decision === 'approved'
-                    ? 'text-green-600'
-                    : 'text-red-600'
-                }}">
-
-                {{ ucfirst($approval->decision) }}
-
-            </p>
+<div class="flex gap-3">
 
 
+<div>
 
-            @if($approval->comment)
+@if($approval->decision==='approved')
 
-            <p class="mt-1 text-xs text-slate-500 italic">
+<div class="h-7 w-7 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
 
-                "{{ $approval->comment }}"
+✓
 
-            </p>
+</div>
 
-            @endif
+@else
 
+<div class="h-7 w-7 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
 
-
-        </div>
-
-
-    </div>
-
-
-    @endforeach
-
-
-    </div>
+✕
 
 </div>
 
 @endif
 
-                </div>
 
-                {{-- RIGHT ACTIONS --}}
-                <div class="flex flex-col gap-2">
-
-                   @if(
-    $loan->status === 'pending'
-    && $loan->user_id !== auth()->id()
-    && $isOfficial
-)
-
-<div class="flex gap-2">
-
-    {{-- APPROVE --}}
-    <form action="{{ route('loans.approve',$loan) }}" method="POST">
-
-@csrf
+</div>
 
 
-<textarea
-name="comment"
-placeholder="Approval comment (optional)"
-class="w-full border rounded-lg p-2 text-sm mb-2"></textarea>
+
+<div class="flex-1">
 
 
-<button
-class="bg-green-600 text-white px-3 py-1 rounded">
-Approve
-</button>
+<div class="flex flex-col sm:flex-row sm:justify-between">
 
 
-</form>
+<p class="font-medium text-sm">
+
+{{ $approval->approver->name ?? 'Unknown' }}
+
+</p>
 
 
-    {{-- REJECT --}}
-    <button
-        onclick="document.getElementById('reject-{{ $loan->id }}').classList.remove('hidden')"
-        class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
+<p class="text-xs text-slate-400">
 
-        Reject
+{{ $approval->approved_at 
+? \Carbon\Carbon::parse($approval->approved_at)->diffForHumans()
+: ''
+}}
 
-    </button>
+</p>
 
 
 </div>
 
 
-{{-- REJECT MODAL --}}
-<div
-id="reject-{{ $loan->id }}"
-class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+<p class="text-xs mt-1
+
+{{ $approval->decision==='approved'
+?'text-green-600'
+:'text-red-600'
+}}">
+
+{{ ucfirst($approval->decision) }}
+
+</p>
 
 
-<div class="bg-white rounded-xl p-6 w-full max-w-md">
 
-<h3 class="font-semibold text-lg mb-4">
-Reject Loan
-</h3>
+@if($approval->comment)
+
+<p class="text-xs text-slate-500 italic mt-1">
+
+"{{ $approval->comment }}"
+
+</p>
+
+@endif
 
 
-<form action="{{ route('loans.reject',$loan) }}" method="POST">
+</div>
+
+
+
+</div>
+
+
+@endforeach
+
+
+</div>
+
+
+</div>
+
+
+@endif
+
+
+
+
+</div>
+
+
+
+
+
+{{-- ACTIONS --}}
+
+<div class="sm:w-40">
+
+
+@if(
+$loan->status==='pending'
+&&
+$loan->user_id !== auth()->id()
+&&
+$isOfficial
+)
+
+
+
+<form action="{{ route('loans.approve',$loan) }}" method="POST">
 
 @csrf
 
 
 <textarea
 name="comment"
-required
-rows="4"
-class="w-full border rounded-lg p-3"
-placeholder="Reason for rejection">
+placeholder="Approval comment"
+class="w-full border rounded-lg p-2 text-sm mb-2">
 </textarea>
 
 
-<div class="flex justify-end gap-3 mt-4">
-
 
 <button
-type="button"
-onclick="document.getElementById('reject-{{ $loan->id }}').classList.add('hidden')"
-class="px-4 py-2 border rounded-lg">
+class="w-full bg-green-600 text-white py-2 rounded-lg">
 
-Cancel
+Approve
 
 </button>
-
-
-<button
-class="bg-red-600 text-white px-4 py-2 rounded-lg">
-
-Reject Loan
-
-</button>
-
-
-</div>
 
 
 </form>
 
 
-</div>
-
-</div>
 
 @endif
 
-                    @if($loan->status == 'approved' && $group->isChairperson())
-                        <form action="{{ route('loans.disburse',$loan) }}" method="POST">
-                            @csrf
-                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm shadow">
-                                Disburse
-                            </button>
-                        </form>
-                    @endif
 
-                </div>
 
-            </div>
-        </div>
 
-    @empty
-        <div class="py-6 text-slate-500">No group loans found.</div>
-    @endforelse
+@if($loan->status=='approved' && $group->isChairperson())
+
+
+<form action="{{ route('loans.disburse',$loan) }}" method="POST">
+
+@csrf
+
+
+<button
+class="w-full bg-blue-600 text-white py-2 rounded-lg">
+
+Disburse
+
+</button>
+
+
+</form>
+
+
+@endif
+
+
+
 </div>
-    </div>
+
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+@empty
+
+
+<div class="text-center text-slate-500 py-8">
+
+No group loans found.
+
+</div>
+
+
+@endforelse
+
+
+
+</div>
+
+
+
+</div>
+
+
 
 </div>
 
