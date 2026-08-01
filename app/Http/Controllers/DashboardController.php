@@ -256,33 +256,26 @@ class DashboardController extends Controller
         */
 
 
-        $monthlyLoans = Loan::where(
-                'group_id',
-                $group->id
-            )
-            ->whereIn('status',[
-
-                'approved',
-                'disbursed',
-                'overdue',
-                'completed'
-
-            ])
-            ->selectRaw("
-
-                TO_CHAR(created_at,'Mon YYYY') as month,
-
-                DATE_TRUNC('month',created_at) as month_date,
-
-                SUM(amount) as total
-
-            ")
-            ->groupBy(
-                'month',
-                'month_date'
-            )
-            ->orderBy('month_date')
-            ->get();
+       $monthlyLoans = Loan::where(
+        'group_id',
+        $group->id
+    )
+    ->whereIn('status',[
+        'approved',
+        'disbursed',
+        'overdue',
+        'completed'
+    ])
+    ->selectRaw("
+        TO_CHAR(DATE_TRUNC('month',created_at),'Mon YYYY') as month,
+        DATE_TRUNC('month',created_at) as month_date,
+        SUM(amount) as total
+    ")
+    ->groupByRaw("
+        DATE_TRUNC('month',created_at)
+    ")
+    ->orderBy('month_date')
+    ->get();
 
 
 
@@ -295,14 +288,13 @@ class DashboardController extends Controller
 $monthlyContributions = $group->contributions()
     ->where('status','paid')
     ->selectRaw("
-        TO_CHAR(created_at,'Mon YYYY') as month,
+        TO_CHAR(DATE_TRUNC('month',created_at),'Mon YYYY') as month,
         DATE_TRUNC('month',created_at) as month_date,
         SUM(amount) as total
     ")
-    ->groupBy(
-        'month',
-        'month_date'
-    )
+    ->groupByRaw("
+        DATE_TRUNC('month',created_at)
+    ")
     ->orderBy('month_date')
     ->get();
 
@@ -357,7 +349,6 @@ $monthlyContributions = $group->contributions()
 
 $topContributors = $group->contributions()
     ->where('status','paid')
-    ->with('user')
     ->selectRaw('
         user_id,
         SUM(amount) as total_contributed
@@ -365,7 +356,8 @@ $topContributors = $group->contributions()
     ->groupBy('user_id')
     ->orderByDesc('total_contributed')
     ->take(6)
-    ->get();
+    ->get()
+    ->load('user');
 
 
 

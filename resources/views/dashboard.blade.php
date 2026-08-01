@@ -137,8 +137,9 @@
 
         {{-- Infographic: monthly contributions + top contributors --}}
         @php
-            $monthlyContribLabels = isset($monthlyContributions) ? $monthlyContributions->pluck('month') : (isset($monthlyLoans) ? $monthlyLoans->pluck('month') : collect());
-            $monthlyContribData = isset($monthlyContributions) ? $monthlyContributions->pluck('total') : (isset($monthlyLoans) ? $monthlyLoans->pluck('total') : collect());
+            $monthlyContribLabels = $monthlyContributions->pluck('month');
+
+$monthlyContribData = $monthlyContributions->pluck('total');
 
             // prepare contributors: prefer $topContributors, fallback to topBorrowers or group members
             if (isset($topContributors)) {
