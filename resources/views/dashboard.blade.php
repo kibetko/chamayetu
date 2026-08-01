@@ -105,11 +105,14 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm p-4 border border-green-50">
-                <div class="text-xs text-gray-500">My Contribution Summary</div>
-                <div class="mt-3 text-2xl font-semibold text-[#063a2a]">
-                    KES 0
-                </div>
-            </div>
+    <div class="text-xs text-gray-500">
+        My Contribution Summary
+    </div>
+
+    <div class="mt-3 text-2xl font-semibold text-[#063a2a]">
+        KES {{ number_format($stats['my_contributions']) }}
+    </div>
+</div>
 
             <div class="bg-white rounded-xl shadow-sm p-4 border border-green-50">
                 <div class="text-xs text-gray-500">Total Loans Issued</div>

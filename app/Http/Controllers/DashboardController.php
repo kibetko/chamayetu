@@ -79,16 +79,25 @@ class DashboardController extends Controller
 
         $stats = [
 
-            'members'=>$group->members->count(),
+    'members'=>$group->members->count(),
 
 
-            'contributions'=>$group->contributions()
-                ->where('status','paid')
-                ->sum('amount'),
+    // Total group contributions
+    'contributions'=>$group->contributions()
+        ->where('status','paid')
+        ->sum('amount'),
 
 
 
-            'active_loans'=>$group->loans()
+    // Logged in user's contributions
+    'my_contributions'=>$group->contributions()
+        ->where('user_id',$user->id)
+        ->where('status','paid')
+        ->sum('amount'),
+
+
+
+    'active_loans'=>$group->loans()
                 ->whereIn('status',[
 
                     'approved',
