@@ -286,7 +286,25 @@ class DashboardController extends Controller
 
 
 
+                /*
+|--------------------------------------------------------------------------
+| MONTHLY CONTRIBUTIONS
+|--------------------------------------------------------------------------
+*/
 
+$monthlyContributions = $group->contributions()
+    ->where('status','paid')
+    ->selectRaw("
+        TO_CHAR(created_at,'Mon YYYY') as month,
+        DATE_TRUNC('month',created_at) as month_date,
+        SUM(amount) as total
+    ")
+    ->groupBy(
+        'month',
+        'month_date'
+    )
+    ->orderBy('month_date')
+    ->get();
 
 
 
@@ -331,7 +349,23 @@ class DashboardController extends Controller
 
 
 
+                    /*
+|--------------------------------------------------------------------------
+| TOP CONTRIBUTORS
+|--------------------------------------------------------------------------
+*/
 
+$topContributors = $group->contributions()
+    ->where('status','paid')
+    ->with('user')
+    ->selectRaw('
+        user_id,
+        SUM(amount) as total_contributed
+    ')
+    ->groupBy('user_id')
+    ->orderByDesc('total_contributed')
+    ->take(6)
+    ->get();
 
 
 
@@ -443,6 +477,10 @@ class DashboardController extends Controller
 
 
             'onlineMembers'=>$onlineMembers,
+
+            'monthlyContributions'=>$monthlyContributions,
+
+            'topContributors'=>$topContributors,
 
 
         ]);

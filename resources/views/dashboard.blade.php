@@ -142,7 +142,14 @@
 
             // prepare contributors: prefer $topContributors, fallback to topBorrowers or group members
             if (isset($topContributors)) {
-                $contributors = $topContributors;
+                $contributors = $topContributors->map(function($c){
+
+    return (object)[
+        'name'=>$c->user->name ?? 'Unknown',
+        'total'=>$c->total_contributed
+    ];
+
+});
             } elseif (isset($topBorrowers)) {
                 $contributors = $topBorrowers->map(function($b){ return (object)['name' => $b->user->name ?? 'Unknown', 'total' => $b->total_borrowed ?? 0]; });
             } elseif (isset($group) && $group->members) {
