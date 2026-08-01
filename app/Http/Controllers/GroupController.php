@@ -8,6 +8,7 @@ use App\Models\GroupSetting;
 use App\Models\GroupJoinRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Notifications\ChamaNotification;
 
 class GroupController extends Controller
 {
@@ -104,12 +105,37 @@ class GroupController extends Controller
                 ]);
         }
 
-GroupJoinRequest::create([
+$joinRequest = GroupJoinRequest::create([
     'group_id' => $group->id,
     'user_id' => auth()->id(),
     'message' => $validated['message'],
     'status' => 'pending'
 ]);
+
+
+// Notify chairperson
+$chairperson = GroupMember::where('group_id', $group->id)
+    ->where('role', 'chairperson')
+    ->first();
+
+
+if ($chairperson) {
+
+    $chairpersonUser = \App\Models\User::find(
+        $chairperson->user_id
+    );
+
+    $chairpersonUser->notify(
+        new ChamaNotification(
+            'New Join Request',
+            auth()->user()->name .
+            ' has requested to join ' .
+            $group->name .
+            '.',
+            url('/dashboard')
+        )
+    );
+}
 
         return back()->with(
             'success',
@@ -179,6 +205,15 @@ GroupJoinRequest::create([
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now()
         ]);
+        $request->user->notify(
+    new ChamaNotification(
+        'Join Request Approved',
+        'Your request to join ' .
+        $request->group->name .
+        ' has been approved.',
+        url('/dashboard')
+    )
+);
 
         return back()->with(
             'success',
@@ -199,6 +234,16 @@ GroupJoinRequest::create([
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now()
         ]);
+
+        $request->user->notify(
+    new ChamaNotification(
+        'Join Request Rejected',
+        'Your request to join ' .
+        $request->group->name .
+        ' has been rejected.',
+        url('/groups')
+    )
+);
 
         return back()->with(
             'success',
