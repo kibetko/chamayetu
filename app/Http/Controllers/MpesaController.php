@@ -15,7 +15,14 @@ class MpesaController extends Controller
 
 
     private function accessToken()
+
+
     {
+
+        Log::info('MPESA CONFIG CHECK', [
+    'key'=>config('services.mpesa.key'),
+    'secret'=>config('services.mpesa.secret'),
+]);
 
         $response = Http::withBasicAuth(
 
