@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MpesaController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\MobileAuthController;
 
@@ -7,6 +8,12 @@ use App\Http\Controllers\Api\MobileAuthController;
 Route::post(
     '/login',
     [MobileAuthController::class,'login']
+);
+
+
+Route::post(
+    '/mpesa/callback',
+    [MpesaController::class,'callback']
 );
 
 

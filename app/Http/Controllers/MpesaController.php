@@ -302,9 +302,8 @@ class MpesaController extends Controller
 
 
                 "CallBackURL" =>
-                    config('app.url')
-                    .'/payments/callback',
-
+    config('app.url')
+    .'/api/mpesa/callback',
 
 
                 "AccountReference" =>
