@@ -446,33 +446,33 @@
             <div class="p-6">
 
                 <form action="{{ route('mpesa.stk') }}" method="POST">
-    @csrf
+                    @csrf
 
-    <input type="hidden" 
-           name="payment_type" 
-           value="contribution">
+                    <input type="hidden" 
+                        name="payment_type" 
+                        value="contribution">
 
-    <input type="number" 
-           name="amount" 
-           min="1" 
-           required
-           class="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-200"
-           placeholder="Enter amount">
+                    <input type="number" 
+                        name="amount" 
+                        min="1" 
+                        required
+                        class="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-200"
+                        placeholder="Enter amount">
 
-    <div class="flex justify-end gap-3 mt-6">
-        <button type="button"
-            x-on:click="$dispatch('close-modal', 'mpesa-contribution')"
-            class="px-4 py-2 rounded-xl border">
-            Cancel
-        </button>
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button"
+                            x-on:click="$dispatch('close-modal', 'mpesa-contribution')"
+                            class="px-4 py-2 rounded-xl border">
+                            Cancel
+                        </button>
 
-        <button type="submit"
-            class="px-5 py-2 rounded-xl bg-emerald-600 text-white">
-            Pay
-        </button>
-    </div>
+                        <button type="submit"
+                            class="px-5 py-2 rounded-xl bg-emerald-600 text-white">
+                            Pay
+                        </button>
+                    </div>
 
-</form>
+                </form>
 
             </div>
 

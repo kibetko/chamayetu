@@ -310,7 +310,7 @@ class MpesaController extends Controller
 
                 "CallBackURL" =>
     config('app.url')
-    .'/api/mpesa/callback',
+    .'/mpesa/callback',
 
 
                 "AccountReference" =>
@@ -459,12 +459,10 @@ class MpesaController extends Controller
 
 
     public function callback(Request $request)
-    {
+{
+    
 
-
-        $data = $request->all();
-
-
+    $data = $request->all();
 
         Log::info(
             'M-Pesa Callback',
@@ -476,18 +474,24 @@ class MpesaController extends Controller
 
 
 
-        $checkoutRequestId =
+        $checkoutRequestId = data_get(
+    $data,
+    'Body.stkCallback.CheckoutRequestID'
+);
 
-            $data['Body']['stkCallback']['CheckoutRequestID'];
+$resultCode = data_get(
+    $data,
+    'Body.stkCallback.ResultCode'
+);
 
+if (!$checkoutRequestId) {
+    Log::error('M-Pesa callback missing CheckoutRequestID');
 
-
-        $resultCode =
-
-            $data['Body']['stkCallback']['ResultCode'];
-
-
-
+    return response()->json([
+        'ResultCode' => 0,
+        'ResultDesc' => 'Accepted',
+    ]);
+}
 
 
 

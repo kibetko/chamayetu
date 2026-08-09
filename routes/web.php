@@ -9,6 +9,8 @@ use App\Http\Controllers\GroupUpdateController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\MpesaController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\LoanRepaymentController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -134,7 +136,7 @@ Route::post(
 )->name('mpesa.stk');
 
 Route::post(
-    '/payments/callback',
+    '/mpesa/callback',
     [MpesaController::class, 'callback']
 )->name('mpesa.callback');
 

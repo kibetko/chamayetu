@@ -13,17 +13,23 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
+        /*
+        |--------------------------------------------------------------------------
+        | CHECK GROUP MEMBERSHIP
+        |--------------------------------------------------------------------------
+        */
 
         if ($user->groups()->count() === 0) {
-
             return view('groups.no-group');
-
         }
 
-
+        /*
+        |--------------------------------------------------------------------------
+        | ACTIVE GROUP
+        |--------------------------------------------------------------------------
+        */
 
         $activeGroupId = session('active_group_id');
-
 
         if (! $activeGroupId) {
 
@@ -32,14 +38,16 @@ class DashboardController extends Controller
                 ->first()
                 ->id;
 
-
             session([
-                'active_group_id'=>$activeGroupId,
+                'active_group_id' => $activeGroupId,
             ]);
-
         }
 
-
+        /*
+        |--------------------------------------------------------------------------
+        | LOAD GROUP
+        |--------------------------------------------------------------------------
+        */
 
         $group = $user->groups()
             ->with([
@@ -49,26 +57,19 @@ class DashboardController extends Controller
                 'settings',
                 'joinRequests.user',
             ])
-            ->where('groups.id',$activeGroupId)
+            ->where('groups.id', $activeGroupId)
             ->first();
 
-
-
-        if(!$group){
+        if (! $group) {
 
             session()->forget('active_group_id');
-
 
             return redirect()
                 ->route('groups.index')
                 ->withErrors([
-                    'group'=>'Invalid active group.'
+                    'group' => 'Invalid active group.'
                 ]);
-
         }
-
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -76,57 +77,60 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-
         $stats = [
 
-    'members'=>$group->members->count(),
+    'members' => $group->members->count(),
 
-
-    // Total group contributions
-    'contributions'=>$group->contributions()
-        ->where('status','paid')
+    // Total paid contributions by all members
+    'contributions' => $group->contributions()
+        ->where('status', 'paid')
         ->sum('amount'),
 
-
-
-    // Logged in user's contributions
-    'my_contributions'=>$group->contributions()
-        ->where('user_id',$user->id)
-        ->where('status','paid')
+    // Logged-in user's contributions
+    'my_contributions' => $group->contributions()
+        ->where('user_id', $user->id)
+        ->where('status', 'paid')
         ->sum('amount'),
 
+    'active_loans' => $group->loans()
+        ->whereIn('status', [
+            'approved',
+            'disbursed',
+            'overdue'
+        ])
+        ->count(),
 
+    'pending_requests' => method_exists($group, 'joinRequests')
+        ? $group->joinRequests()
+            ->where('status', 'pending')
+            ->count()
+        : 0,
+];
 
-    'active_loans'=>$group->loans()
-                ->whereIn('status',[
+        /*
+        |--------------------------------------------------------------------------
+        | LOAD ALL RELEVANT LOANS
+        |--------------------------------------------------------------------------
+        |
+        | We load repayments together with the loans so that we can calculate:
+        |
+        | Principal
+        | Interest
+        | Total payable
+        | Total repaid
+        | Outstanding
+        |
+        */
 
-                    'approved',
-                    'disbursed',
-                    'overdue'
-
-                ])
-                ->count(),
-
-
-
-            'pending_requests'=>method_exists($group,'joinRequests')
-
-                ?
-
-                $group->joinRequests()
-                    ->where('status','pending')
-                    ->count()
-
-                :
-
-                0,
-
-        ];
-
-
-
-
-
+        $allLoans = Loan::where('group_id', $group->id)
+            ->whereIn('status', [
+                'approved',
+                'disbursed',
+                'overdue',
+                'completed'
+            ])
+            ->with('repayments')
+            ->get();
 
         /*
         |--------------------------------------------------------------------------
@@ -134,120 +138,125 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        // Original principal that was borrowed
+        $totalLoaned = $allLoans->sum(function ($loan) {
+            return (float) $loan->amount;
+        });
 
-        $loanStats = [
+        // Total amount that borrowers are expected to repay
+        // including interest.
+        $totalPayable = $allLoans->sum(function ($loan) {
 
+            return (float) (
+                $loan->total_payable
+                ?? $loan->amount
+            );
 
-            'total_loaned'=>Loan::where(
-                    'group_id',
-                    $group->id
-                )
-                ->whereIn('status',[
+        });
 
-                    'approved',
-                    'disbursed',
-                    'overdue',
-                    'completed'
+        // Interest = total payable - principal
+        $totalInterest = max(
+            0,
+            $totalPayable - $totalLoaned
+        );
 
-                ])
-                ->sum('amount'),
+        // Total repayments made against all loans
+        $totalRepaid = $allLoans->sum(function ($loan) {
 
+            return $loan->repayments->sum(function ($repayment) {
+                return (float) $repayment->amount;
+            });
 
-
-
-            'active_loans'=>Loan::where(
-                    'group_id',
-                    $group->id
-                )
-                ->whereIn('status',[
-
-                    'approved',
-                    'disbursed',
-                    'overdue'
-
-                ])
-                ->count(),
-
-
-
-
-            'completed_loans'=>Loan::where(
-                    'group_id',
-                    $group->id
-                )
-                ->where('status','completed')
-                ->count(),
-
-
-
-
-            'overdue_loans'=>Loan::where(
-                    'group_id',
-                    $group->id
-                )
-                ->where('status','overdue')
-                ->count(),
-
-        ];
-
-
-
-
-
+        });
 
         /*
         |--------------------------------------------------------------------------
-        | REPAYMENTS
+        | OUTSTANDING
+        |--------------------------------------------------------------------------
+        |
+        | Outstanding must be calculated against total payable,
+        | NOT against the original loan amount.
+        |
+        | max(0, ...) prevents negative balances.
+        |
+        */
+
+        $outstanding = max(
+            0,
+            $totalPayable - $totalRepaid
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | ACTIVE / COMPLETED / OVERDUE COUNTS
         |--------------------------------------------------------------------------
         */
 
-
-        $loanStats['total_repaid']
-
-            = LoanRepayment::whereHas(
-
-                'loan',
-
-                function($query) use ($group){
-
-                    $query->where(
-                        'group_id',
-                        $group->id
-                    );
-
-                }
-
-            )
-            ->sum('amount');
-
-
-
-
-
-        $loanStats['outstanding']
-
-            = Loan::where(
-                'group_id',
-                $group->id
-            )
-            ->whereIn('status',[
-
+        $activeLoansCount = $allLoans
+            ->whereIn('status', [
                 'approved',
                 'disbursed',
                 'overdue'
-
             ])
-            ->sum('amount')
+            ->count();
 
-            -
+        $completedLoansCount = $allLoans
+            ->where('status', 'completed')
+            ->count();
 
-            $loanStats['total_repaid'];
+        $overdueLoansCount = $allLoans
+            ->where('status', 'overdue')
+            ->count();
 
+        /*
+        |--------------------------------------------------------------------------
+        | LOAN STATISTICS ARRAY
+        |--------------------------------------------------------------------------
+        */
 
+        $loanStats = [
 
+            'total_loaned' => $totalLoaned,
 
+            'total_interest' => $totalInterest,
 
+            'total_payable' => $totalPayable,
 
+            'total_repaid' => $totalRepaid,
+
+            'outstanding' => $outstanding,
+
+            'active_loans' => $activeLoansCount,
+
+            'completed_loans' => $completedLoansCount,
+
+            'overdue_loans' => $overdueLoansCount,
+
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | RECOVERY RATE
+        |--------------------------------------------------------------------------
+        |
+        | Recovery is based on total payable, including interest.
+        |
+        */
+
+        $recoveryRate = 0;
+
+        if ($totalPayable > 0) {
+
+            $recoveryRate = (
+                $totalRepaid / $totalPayable
+            ) * 100;
+
+            // Never display more than 100%
+            $recoveryRate = min(
+                100,
+                max(0, $recoveryRate)
+            );
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -255,145 +264,143 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        $monthlyLoans = Loan::where(
+            'group_id',
+            $group->id
+        )
+            ->whereIn('status', [
+                'approved',
+                'disbursed',
+                'overdue',
+                'completed'
+            ])
+            ->selectRaw("
+                TO_CHAR(
+                    DATE_TRUNC('month', created_at),
+                    'Mon YYYY'
+                ) as month,
 
-       $monthlyLoans = Loan::where(
-        'group_id',
-        $group->id
-    )
-    ->whereIn('status',[
-        'approved',
-        'disbursed',
-        'overdue',
-        'completed'
-    ])
-    ->selectRaw("
-        TO_CHAR(DATE_TRUNC('month',created_at),'Mon YYYY') as month,
-        DATE_TRUNC('month',created_at) as month_date,
-        SUM(amount) as total
-    ")
-    ->groupByRaw("
-        DATE_TRUNC('month',created_at)
-    ")
-    ->orderBy('month_date')
-    ->get();
+                DATE_TRUNC(
+                    'month',
+                    created_at
+                ) as month_date,
 
+                SUM(amount) as total
+            ")
+            ->groupByRaw("
+                DATE_TRUNC(
+                    'month',
+                    created_at
+                )
+            ")
+            ->orderBy('month_date')
+            ->get();
 
+        $loanStats['interest_earned'] = max(
+    0,
+    $loanStats['total_repaid'] - $loanStats['total_loaned']
+);
 
-                /*
-|--------------------------------------------------------------------------
-| MONTHLY CONTRIBUTIONS
-|--------------------------------------------------------------------------
-*/
-
-$monthlyContributions = $group->contributions()
-    ->where('status','paid')
-    ->selectRaw("
-        TO_CHAR(DATE_TRUNC('month',created_at),'Mon YYYY') as month,
-        DATE_TRUNC('month',created_at) as month_date,
-        SUM(amount) as total
-    ")
-    ->groupByRaw("
-        DATE_TRUNC('month',created_at)
-    ")
-    ->orderBy('month_date')
-    ->get();
-
-
-
+$stats['total_available'] =
+    $stats['contributions'] + $loanStats['interest_earned'];
         /*
+        |--------------------------------------------------------------------------
+        | MONTHLY CONTRIBUTIONS
+        |--------------------------------------------------------------------------
+        */
+
+
+        $monthlyContributions = $group->contributions()
+
+            ->where('status', 'paid')
+            ->selectRaw("
+                TO_CHAR(
+                    DATE_TRUNC('month', created_at),
+                    'Mon YYYY'
+                ) as month,
+
+                DATE_TRUNC(
+                    'month',
+                    created_at
+                ) as month_date,
+
+                SUM(amount) as total
+            ")
+            ->groupByRaw("
+                DATE_TRUNC(
+                    'month',
+                    created_at
+                )
+            ")
+            ->orderBy('month_date')
+            ->get();
+
+
+
+            
+      
+
+            
+            /*
         |--------------------------------------------------------------------------
         | TOP BORROWERS
         |--------------------------------------------------------------------------
         */
 
-
         $topBorrowers = Loan::with('user')
-
             ->where(
                 'group_id',
                 $group->id
             )
-
-            ->whereIn('status',[
-
+            ->whereIn('status', [
                 'approved',
                 'disbursed',
                 'overdue',
                 'completed'
-
             ])
-
-            ->selectRaw('
-
+            ->selectRaw("
                 user_id,
-
                 SUM(amount) as total_borrowed
-
-            ')
-
+            ")
             ->groupBy('user_id')
-
             ->orderByDesc('total_borrowed')
-
             ->take(5)
-
             ->get();
-
-
-
-                    /*
-|--------------------------------------------------------------------------
-| TOP CONTRIBUTORS
-|--------------------------------------------------------------------------
-*/
-
-$topContributors = $group->contributions()
-    ->where('status','paid')
-    ->selectRaw('
-        user_id,
-        SUM(amount) as total_contributed
-    ')
-    ->groupBy('user_id')
-    ->orderByDesc('total_contributed')
-    ->take(6)
-    ->get()
-    ->load('user');
-
-
 
         /*
         |--------------------------------------------------------------------------
-        | RECOVERY RATE
+        | TOP CONTRIBUTORS
         |--------------------------------------------------------------------------
         */
 
+        /*
+|--------------------------------------------------------------------------
+| DAILY CONTRIBUTIONS - LAST 2 MONTHS
+|--------------------------------------------------------------------------
+*/
 
-        $recoveryRate = 0;
+$dailyContributions = $group->contributions()
+    ->where('status', 'paid')
+    ->where('created_at', '>=', now()->subMonths(2))
+    ->selectRaw("
+        DATE(created_at) as contribution_date,
+        SUM(amount) as total
+    ")
+    ->groupByRaw("DATE(created_at)")
+    ->orderBy('contribution_date')
+    ->get();
 
-
-        if($loanStats['total_loaned'] > 0){
-
-            $recoveryRate =
-
-                (
-
-                    $loanStats['total_repaid']
-
-                    /
-
-                    $loanStats['total_loaned']
-
-                )
-
-                *100;
-
-        }
-
-
-
-
-
-
+        $topContributors = $group->contributions()
+            ->where('status', 'paid')
+            ->selectRaw("
+                user_id,
+                SUM(amount) as total_contributed
+            ")
+            ->groupBy('user_id')
+            ->orderByDesc('total_contributed')
+            ->take(6)
+            ->get()
+            ->load('user');
 
         /*
         |--------------------------------------------------------------------------
@@ -401,19 +408,12 @@ $topContributors = $group->contributions()
         |--------------------------------------------------------------------------
         */
 
-
         $pendingRequests = $group
             ->joinRequests()
             ->with('user')
-            ->where('status','pending')
+            ->where('status', 'pending')
             ->latest()
             ->get();
-
-
-
-
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -421,95 +421,75 @@ $topContributors = $group->contributions()
         |--------------------------------------------------------------------------
         */
 
-
         $onlineUserIds = $this->getOnlineUsers();
 
-
         $onlineMembers = $group->members()
-
             ->whereIn(
                 'users.id',
                 $onlineUserIds
             )
-
             ->get();
 
+        /*
+        |--------------------------------------------------------------------------
+        | RETURN DASHBOARD
+        |--------------------------------------------------------------------------
+        */
 
+        return view('dashboard', [
 
+            'group' => $group,
 
+            'groups' => $user->groups,
 
+            'stats' => $stats,
 
+            'loanStats' => $loanStats,
 
+            'monthlyLoans' => $monthlyLoans,
 
-        return view('dashboard',[
+            'topBorrowers' => $topBorrowers,
 
+            'recoveryRate' => $recoveryRate,
 
-            'group'=>$group,
+            'pendingRequests' => $pendingRequests,
 
+            'onlineMembers' => $onlineMembers,
 
-            'groups'=>$user->groups,
+            'monthlyContributions' => $monthlyContributions,
 
+            'topContributors' => $topContributors,
 
-            'stats'=>$stats,
-
-
-            'loanStats'=>$loanStats,
-
-
-            'monthlyLoans'=>$monthlyLoans,
-
-
-            'topBorrowers'=>$topBorrowers,
-
-
-            'recoveryRate'=>$recoveryRate,
-
-
-            'pendingRequests'=>$pendingRequests,
-
-
-            'onlineMembers'=>$onlineMembers,
-
-            'monthlyContributions'=>$monthlyContributions,
-
-            'topContributors'=>$topContributors,
-
+            'dailyContributions' => $dailyContributions,
 
         ]);
-
     }
 
-
-
-
-
+    /*
+    |--------------------------------------------------------------------------
+    | ONLINE USERS
+    |--------------------------------------------------------------------------
+    */
 
     private function getOnlineUsers()
     {
+        $users = [];
 
-        $users=[];
+        foreach (
+            \App\Models\User::pluck('id') as $id
+        ) {
 
-
-        foreach(
-            \App\Models\User::pluck('id')
-            as $id
-        ){
-
-            if(
+            if (
                 Cache::has(
-                    'online-user-'.$id
+                    'online-user-' . $id
                 )
-            ){
+            ) {
 
-                $users[]=$id;
-
+                $users[] = $id;
             }
-
         }
 
-
         return $users;
-
     }
-
 }
+
