@@ -457,73 +457,114 @@ Approval History
 
 
 
-{{-- ACTIONS --}}
+       {{-- ACTIONS --}}
 
-<div class="sm:w-40">
+<div class="sm:w-40 space-y-2">
 
+    {{-- APPROVE / REJECT --}}
+    @if(
+        $loan->status === 'pending' &&
+        $loan->user_id !== auth()->id() &&
+        $loan->group_id === $group->id
+    )
 
-@if(
-$loan->status==='pending'
-&&
-$loan->user_id !== auth()->id()
-&&
-$isOfficial
-)
+        @php
+            $hasDecided = $loan->approvals
+                ->where('approved_by', auth()->id())
+                ->isNotEmpty();
+        @endphp
 
+        @if(!$hasDecided)
 
+            {{-- APPROVE --}}
 
-<form action="{{ route('loans.approve',$loan) }}" method="POST">
+            <form
+                action="{{ route('loans.approve', $loan) }}"
+                method="POST"
+            >
+                @csrf
 
-@csrf
+                <textarea
+                    name="comment"
+                    placeholder="Approval comment (optional)"
+                    rows="2"
+                    class="w-full border rounded-lg p-2 text-sm mb-2 focus:ring-2 focus:ring-green-200 focus:outline-none"
+                ></textarea>
 
-
-<textarea
-name="comment"
-placeholder="Approval comment"
-class="w-full border rounded-lg p-2 text-sm mb-2">
-</textarea>
-
-
-
-<button
-class="w-full bg-green-600 text-white py-2 rounded-lg">
-
-Approve
-
-</button>
-
-
-</form>
-
-
-
-@endif
-
-
+                <button
+                    type="submit"
+                    class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition"
+                >
+                    ✓ Approve
+                </button>
+            </form>
 
 
-@if($loan->status=='approved' && $group->isChairperson())
+            {{-- REJECT --}}
+
+            <form
+                action="{{ route('loans.reject', $loan) }}"
+                method="POST"
+                onsubmit="return confirm('Are you sure you want to reject this loan?')"
+            >
+                @csrf
+
+                <textarea
+                    name="comment"
+                    placeholder="Reason for rejection"
+                    rows="2"
+                    required
+                    class="w-full border rounded-lg p-2 text-sm mb-2 focus:ring-2 focus:ring-red-200 focus:outline-none"
+                ></textarea>
+
+                <button
+                    type="submit"
+                    class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg transition"
+                >
+                    ✕ Reject
+                </button>
+            </form>
+
+        @else
+
+            <div class="text-center text-xs text-slate-500 bg-slate-100 rounded-lg p-2">
+                You have already made a decision
+            </div>
+
+        @endif
+
+    @endif
 
 
-<form action="{{ route('loans.disburse',$loan) }}" method="POST">
+    {{-- DISBURSE --}}
+    @if(
+        $loan->status === 'approved' &&
+        $group->members()
+            ->where('user_id', auth()->id())
+            ->whereIn('role', [
+                'chairperson',
+                'secretary',
+                'treasurer'
+            ])
+            ->exists()
+    )
 
-@csrf
+        <form
+            action="{{ route('loans.disburse', $loan) }}"
+            method="POST"
+        >
+            @csrf
 
+            <button
+                type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition"
+            >
+                Disburse
+            </button>
 
-<button
-class="w-full bg-blue-600 text-white py-2 rounded-lg">
+        </form>
 
-Disburse
-
-</button>
-
-
-</form>
-
-
-@endif
-
-
+    @endif
 
 </div>
 
