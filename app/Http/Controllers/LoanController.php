@@ -98,108 +98,185 @@ class LoanController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $group = Group::with('settings')
-            ->findOrFail(session('active_group_id'));
+{
+    $group = Group::with('settings')
+        ->findOrFail(session('active_group_id'));
 
-        $maxMonths = $group->settings->repayment_period_days ?? 12;
+    $maxMonths = $group->settings->repayment_period_days ?? 12;
 
-        $totalContributions = $group->total_contributions;
+    /*
+    |--------------------------------------------------------------------------
+    | CALCULATE AVAILABLE GROUP FUNDS
+    |--------------------------------------------------------------------------
+    */
 
-        $totalLoaned = Loan::where('group_id', $group->id)
-            ->whereIn('status', ['disbursed', 'overdue'])
-            ->sum('amount');
+    $totalContributions = $group->total_contributions;
 
-        $availableFunds = $totalContributions - $totalLoaned;
+    $totalLoaned = $group->total_loaned;
 
-        if ($request->amount > $availableFunds) {
-            return back()->withInput()->withErrors([
-                'amount' => 'Maximum loan available is KES '.number_format($availableFunds),
+    $totalRepayments = LoanRepayment::whereHas('loan', function ($query) use ($group) {
+        $query->where('group_id', $group->id);
+    })->sum('amount');
+
+    $availableFunds = max(
+        0,
+        $totalContributions
+        + $totalRepayments
+        - $totalLoaned
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | CHECK AVAILABLE FUNDS
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->amount > $availableFunds) {
+        return back()
+            ->withInput()
+            ->withErrors([
+                'amount' => 'Maximum loan available is KES ' .
+                    number_format($availableFunds),
             ]);
-        }
+    }
 
-        $userContributions = Contribution::where('group_id', $group->id)
-            ->where('user_id', auth()->id())
-            ->sum('amount');
+    /*
+    |--------------------------------------------------------------------------
+    | CHECK USER CONTRIBUTIONS
+    |--------------------------------------------------------------------------
+    */
 
-        if ($userContributions <= 0) {
-            return back()->withInput()->withErrors([
+    $userContributions = Contribution::where('group_id', $group->id)
+        ->where('user_id', auth()->id())
+        ->sum('amount');
+
+    if ($userContributions <= 0) {
+        return back()
+            ->withInput()
+            ->withErrors([
                 'amount' => 'You must make contributions before applying for a loan.',
             ]);
-        }
+    }
 
-        $maxLoan = $userContributions * $group->settings->maximum_loan_multiplier;
+    /*
+    |--------------------------------------------------------------------------
+    | CHECK PERSONAL LOAN LIMIT
+    |--------------------------------------------------------------------------
+    */
 
-        if ($request->amount > $maxLoan) {
-            return back()->withInput()->withErrors([
-                'amount' => 'Your maximum loan limit is KES '.number_format($maxLoan),
+    $maxLoan = $userContributions *
+        $group->settings->maximum_loan_multiplier;
+
+    if ($request->amount > $maxLoan) {
+        return back()
+            ->withInput()
+            ->withErrors([
+                'amount' => 'Your maximum loan limit is KES ' .
+                    number_format($maxLoan),
             ]);
-        }
+    }
 
-        $activeLoan = Loan::where('user_id', auth()->id())
-            ->whereIn('status', ['pending', 'approved', 'disbursed', 'overdue'])
-            ->exists();
+    /*
+    |--------------------------------------------------------------------------
+    | CHECK EXISTING ACTIVE LOAN
+    |--------------------------------------------------------------------------
+    */
 
-        if ($activeLoan) {
-            return back()->withErrors([
+    $activeLoan = Loan::where('user_id', auth()->id())
+        ->whereIn('status', [
+            'pending',
+            'approved',
+            'disbursed',
+            'overdue'
+        ])
+        ->exists();
+
+    if ($activeLoan) {
+        return back()
+            ->withErrors([
                 'amount' => 'You already have an active loan.',
             ]);
-        }
-
-        $request->validate([
-            'amount' => 'required|numeric|min:1',
-            'duration_days' => 'required|integer|min:1|max:'.$maxMonths,
-            'reason' => 'required|string',
-        ]);
-
-        $interestRate = $group->settings->interest_rate ?? 0;
-
-        $months = (int) $request->duration_days;
-
-        $interestAmount =
-            $request->amount *
-            ($interestRate / 100) *
-            ($months / 30);
-
-        $totalPayable = $request->amount + $interestAmount;
-
-        $loan = Loan::create([
-            'group_id' => $group->id,
-            'user_id' => auth()->id(),
-            'amount' => $request->amount,
-            'total_payable' => $totalPayable,
-            'interest_rate' => $interestRate,
-            'duration_days' => $months,
-            'reason' => $request->reason,
-            'status' => 'pending',
-        ]);
-
-        $officials = $group->members()
-            ->wherePivotIn('role', [
-                'chairperson',
-                'secretary',
-                'treasurer',
-            ])
-            ->get();
-
-        foreach ($officials as $official) {
-
-            $official->notify(
-                new ChamaNotification(
-                    'New Loan Request',
-                    auth()->user()->name.
-                    ' has requested a loan of KES '.
-                    number_format($loan->amount),
-                    url('/loans/'.$loan->id)
-                )
-            );
-
-        }
-
-        return redirect()
-            ->route('loans.index')
-            ->with('success', 'Loan request submitted successfully.');
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE REQUEST
+    |--------------------------------------------------------------------------
+    */
+
+    $request->validate([
+        'amount' => 'required|numeric|min:1',
+        'duration_days' => 'required|integer|min:1|max:' . $maxMonths,
+        'reason' => 'required|string',
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | CALCULATE INTEREST
+    |--------------------------------------------------------------------------
+    */
+
+    $interestRate = $group->settings->interest_rate ?? 0;
+
+    $months = (int) $request->duration_days;
+
+    $interestAmount =
+        $request->amount *
+        ($interestRate / 100) *
+        ($months / 30);
+
+    $totalPayable = $request->amount + $interestAmount;
+
+    /*
+    |--------------------------------------------------------------------------
+    | CREATE LOAN
+    |--------------------------------------------------------------------------
+    */
+
+    $loan = Loan::create([
+        'group_id' => $group->id,
+        'user_id' => auth()->id(),
+        'amount' => $request->amount,
+        'total_payable' => $totalPayable,
+        'interest_rate' => $interestRate,
+        'duration_days' => $months,
+        'reason' => $request->reason,
+        'status' => 'pending',
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | NOTIFY COMMITTEE
+    |--------------------------------------------------------------------------
+    */
+
+    $officials = $group->members()
+        ->wherePivotIn('role', [
+            'chairperson',
+            'secretary',
+            'treasurer',
+        ])
+        ->get();
+
+    foreach ($officials as $official) {
+        $official->notify(
+            new ChamaNotification(
+                'New Loan Request',
+                auth()->user()->name .
+                ' has requested a loan of KES ' .
+                number_format($loan->amount),
+                url('/loans/' . $loan->id)
+            )
+        );
+    }
+
+    return redirect()
+        ->route('loans.index')
+        ->with(
+            'success',
+            'Loan request submitted successfully.'
+        );
+}
 
     /**
      * ✅ CHAIRPERSON OVERRIDE APPROVAL SYSTEM
