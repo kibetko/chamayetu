@@ -186,7 +186,7 @@
 
         {{-- CTA --}}
         <div class="px-4 py-4">
-            <a href="#"
+            <a href="{{ route('loans.apply') }}"
                class="block w-full rounded-md bg-emerald-600 py-2 text-center text-sm font-semibold text-white shadow hover:bg-emerald-700 transition">
                 + Apply for Loan
             </a>

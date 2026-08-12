@@ -504,12 +504,6 @@ if (!$checkoutRequestId) {
 
         )->first();
 
-
-
-
-
-
-
         if(!$transaction){
 
 
@@ -523,12 +517,6 @@ if (!$checkoutRequestId) {
             ]);
 
         }
-
-
-
-
-
-
 
         if($resultCode == 0){
 
@@ -580,50 +568,73 @@ if (!$checkoutRequestId) {
 
 
             /*
-            |--------------------------------------------------------------------------
-            | CONTRIBUTION PAYMENT
-            |--------------------------------------------------------------------------
-            */
+|--------------------------------------------------------------------------
+| CONTRIBUTION PAYMENT
+|--------------------------------------------------------------------------
+*/
 
+if ($transaction->payment_type === 'contribution') {
 
-            if($transaction->payment_type === 'contribution'){
+    $group = \App\Models\Group::find(
+        $transaction->group_id
+    );
 
+    if (!$group) {
 
+        Log::error(
+            'M-Pesa contribution group not found',
+            [
+                'transaction_id' => $transaction->id,
+                'group_id' => $transaction->group_id
+            ]
+        );
 
-                Contribution::create([
+        return response()->json([
+            'ResultCode' => 0,
+            'ResultDesc' => 'Accepted'
+        ]);
+    }
 
+    Contribution::create([
 
-                    'mpesa_transaction_id'=>$transaction->id,
+        'mpesa_transaction_id' => $transaction->id,
 
+        'group_id' => $transaction->group_id,
 
-                    'group_id'=>$transaction->group_id,
+        'user_id' => $transaction->user_id,
 
+        'amount' => $transaction->amount,
 
-                    'user_id'=>$transaction->user_id,
+        'month' => now()->month,
 
+        'year' => now()->year,
 
-                    'amount'=>$transaction->amount,
+        'status' => 'paid',
 
+        'paid_at' => now()
 
-                    'month'=>now()->month,
+    ]);
 
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE GROUP TOTAL CONTRIBUTIONS
+    |--------------------------------------------------------------------------
+    */
 
-                    'year'=>now()->year,
+    $group->increment(
+        'total_contributions',
+        $transaction->amount
+    );
 
-
-                    'status'=>'paid',
-
-
-                    'paid_at'=>now()
-
-
-                ]);
-
-
-
-            }
-
-
+    Log::info(
+        'Group contribution total updated',
+        [
+            'group_id' => $group->id,
+            'amount_added' => $transaction->amount,
+            'new_total' => $group->fresh()->total_contributions
+        ]
+    );
+}
 
 
 

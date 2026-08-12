@@ -14,8 +14,16 @@ class Group extends Model
         'unique_code',
         'description',
         'created_by',
-        'active'
+        'active',
+        'total_contributions',
+        'total_loaned',
     ];
+
+    protected $casts = [
+    'active' => 'boolean',
+    'total_contributions' => 'decimal:2',
+     'total_loaned' => 'decimal:2',
+];
 
     public function creator()
     {
