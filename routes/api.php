@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\MobileLoanController;
 use App\Http\Controllers\Api\MobilePaymentController;
 use App\Http\Controllers\Api\GroupSettingsController;
+use App\Http\Controllers\Api\NotificationController;
 
 
 /*

@@ -4,12 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Notifications\DatabaseNotification;
 
 class NotificationController extends Controller
 {
     /**
-     * Get notifications for the authenticated user.
+     * Get the authenticated user's notifications.
      */
     public function index(Request $request)
     {
@@ -19,27 +18,33 @@ class NotificationController extends Controller
             ->latest()
             ->get()
             ->map(function ($notification) {
+                $data = $notification->data ?? [];
+
                 return [
                     'id' => $notification->id,
 
                     'title' =>
-                        $notification->data['title']
+                        $data['title']
                         ?? 'Notification',
 
                     'message' =>
-                        $notification->data['message']
-                        ?? $notification->data['body']
+                        $data['message']
+                        ?? $data['body']
                         ?? '',
 
                     'type' =>
-                        $notification->data['type']
+                        $data['type']
                         ?? 'general',
 
-                    'read' =>
-                        !is_null($notification->read_at),
+                    'icon' =>
+                        $data['icon']
+                        ?? null,
 
                     'read_at' =>
                         $notification->read_at,
+
+                    'is_read' =>
+                        $notification->read_at !== null,
 
                     'created_at' =>
                         $notification->created_at,
@@ -48,16 +53,14 @@ class NotificationController extends Controller
                         $notification->created_at
                             ? $notification->created_at->diffForHumans()
                             : null,
-
-                    'data' =>
-                        $notification->data,
                 ];
             });
 
         return response()->json([
             'success' => true,
 
-            'notifications' => $notifications,
+            'notifications' =>
+                $notifications,
 
             'unread_count' =>
                 $user->unreadNotifications()->count(),
@@ -69,48 +72,75 @@ class NotificationController extends Controller
      */
     public function markAsRead(
         Request $request,
-        string $notification
+        string $id
     ) {
-        $user = $request->user();
-
-        $notificationModel = $user->notifications()
-            ->where('id', $notification)
+        $notification = $request->user()
+            ->notifications()
+            ->where('id', $id)
             ->first();
 
-        if (!$notificationModel) {
+        if (!$notification) {
             return response()->json([
                 'success' => false,
                 'message' => 'Notification not found.',
             ], 404);
         }
 
-        if (!$notificationModel->read_at) {
-            $notificationModel->markAsRead();
-        }
+        $notification->markAsRead();
 
         return response()->json([
             'success' => true,
             'message' => 'Notification marked as read.',
+            'unread_count' =>
+                $request->user()
+                    ->unreadNotifications()
+                    ->count(),
         ]);
     }
 
     /**
      * Mark all notifications as read.
      */
-    public function markAllAsRead(Request $request)
-    {
-        $user = $request->user();
-
-        $user->unreadNotifications->each(
-            function ($notification) {
-                $notification->markAsRead();
-            }
-        );
+    public function markAllAsRead(
+        Request $request
+    ) {
+        $request->user()
+            ->unreadNotifications
+            ->markAsRead();
 
         return response()->json([
             'success' => true,
-            'message' => 'All notifications marked as read.',
+            'message' =>
+                'All notifications marked as read.',
+
             'unread_count' => 0,
+        ]);
+    }
+
+    /**
+     * Delete one notification.
+     */
+    public function destroy(
+        Request $request,
+        string $id
+    ) {
+        $notification = $request->user()
+            ->notifications()
+            ->where('id', $id)
+            ->first();
+
+        if (!$notification) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Notification not found.',
+            ], 404);
+        }
+
+        $notification->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notification deleted.',
         ]);
     }
 }
