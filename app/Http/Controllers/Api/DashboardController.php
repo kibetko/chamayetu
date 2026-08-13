@@ -22,12 +22,6 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         | LOAD ALL USER GROUPS
         |--------------------------------------------------------------------------
-        |
-        | IMPORTANT:
-        | We deliberately DO NOT use ->first().
-        |
-        | The user can belong to multiple groups.
-        |
         */
 
         $groups = $user->groups()
@@ -40,7 +34,7 @@ class DashboardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | CHECK GROUP MEMBERSHIP
+        | NO GROUPS
         |--------------------------------------------------------------------------
         */
 
@@ -56,6 +50,8 @@ class DashboardController extends Controller
                 ],
 
                 'groups' => [],
+
+                'groups_count' => 0,
 
                 'message' => 'You are not a member of any group.',
             ], 200);
@@ -94,6 +90,34 @@ class DashboardController extends Controller
                 ->where('user_id', $user->id)
                 ->where('status', 'paid')
                 ->sum('amount');
+
+            /*
+            |--------------------------------------------------------------------------
+            | CONTRIBUTION CHART
+            |--------------------------------------------------------------------------
+            |
+            | Groups contributions by actual DATE.
+            |
+            */
+
+            $contributionChart = $group->contributions()
+                ->where('status', 'paid')
+                ->selectRaw("
+                    DATE(created_at) as contribution_date,
+                    SUM(amount) as total
+                ")
+                ->groupByRaw("DATE(created_at)")
+                ->orderBy('contribution_date')
+                ->get()
+                ->map(function ($item) {
+
+                    return [
+                        'date' => $item->contribution_date,
+                        'amount' => (float) $item->total,
+                    ];
+
+                })
+                ->values();
 
             /*
             |--------------------------------------------------------------------------
@@ -140,7 +164,7 @@ class DashboardController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | INTEREST
+            | TOTAL INTEREST
             |--------------------------------------------------------------------------
             */
 
@@ -245,29 +269,26 @@ class DashboardController extends Controller
             |--------------------------------------------------------------------------
             */
 
-            $monthlyContributions = $group->contributions()
-                ->where('status', 'paid')
-                ->selectRaw("
-                    TO_CHAR(
-                        DATE_TRUNC('month', created_at),
-                        'Mon YYYY'
-                    ) as month,
+            $contributionChart = $group->contributions()
+    ->where('status', 'paid')
+    ->where(
+        'created_at',
+        '>=',
+        now()->subMonths(2)->startOfDay()
+    )
+    ->orderBy('created_at')
+    ->get()
+    ->map(function ($contribution) {
 
-                    DATE_TRUNC(
-                        'month',
-                        created_at
-                    ) as month_date,
+        return [
+            'date' => $contribution->created_at->format('Y-m-d'),
+            'amount' => (float) $contribution->amount,
+        ];
 
-                    SUM(amount) as total
-                ")
-                ->groupByRaw("
-                    DATE_TRUNC(
-                        'month',
-                        created_at
-                    )
-                ")
-                ->orderBy('month_date')
-                ->get();
+    })
+    ->values();
+
+
 
             /*
             |--------------------------------------------------------------------------
@@ -324,6 +345,12 @@ class DashboardController extends Controller
                 'members' =>
                     $group->members->count(),
 
+                /*
+                |--------------------------------------------------------------------------
+                | SUMMARY
+                |--------------------------------------------------------------------------
+                */
+
                 'summary' => [
 
                     'total_contributions' =>
@@ -351,6 +378,12 @@ class DashboardController extends Controller
                         (float) $outstanding,
                 ],
 
+                /*
+                |--------------------------------------------------------------------------
+                | LOANS
+                |--------------------------------------------------------------------------
+                */
+
                 'loans' => [
 
                     'active' =>
@@ -366,22 +399,30 @@ class DashboardController extends Controller
                         round($recoveryRate, 2),
                 ],
 
+                /*
+                |--------------------------------------------------------------------------
+                | MONTHLY CONTRIBUTIONS
+                |--------------------------------------------------------------------------
+                */
+
                 'monthly_contributions' =>
-                    $monthlyContributions
-                        ->map(function ($item) {
 
-                            return [
+                    'contribution_chart' => $contributionChart,
 
-                                'month' =>
-                                    $item->month,
+                /*
+                |--------------------------------------------------------------------------
+                | CONTRIBUTION DATE CHART
+                |--------------------------------------------------------------------------
+                */
 
-                                'total' =>
-                                    (float) $item->total,
+                'contribution_chart' =>
+                    $contributionChart,
 
-                            ];
-
-                        })
-                        ->values(),
+                /*
+                |--------------------------------------------------------------------------
+                | RECENT ACTIVITY
+                |--------------------------------------------------------------------------
+                */
 
                 'recent_activity' =>
                     $recentContributions
@@ -411,24 +452,11 @@ class DashboardController extends Controller
                     $user->email,
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | ALL GROUPS
-            |--------------------------------------------------------------------------
-            */
-
             'groups' =>
                 $groupData->values(),
 
-            /*
-            |--------------------------------------------------------------------------
-            | GROUP COUNT
-            |--------------------------------------------------------------------------
-            */
-
             'groups_count' =>
                 $groupData->count(),
-
         ]);
     }
 }
