@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\MemberController;
+use App\Http\Controllers\Api\MobileLoanController;
 
 Route::post(
     '/login',
@@ -40,5 +41,25 @@ Route::middleware('auth:sanctum')->group(function(){
         '/members',
         [MemberController::class, 'index']
     )->name('api.members.index');
+
+    Route::get(
+        '/loans',
+        [MobileLoanController::class, 'index']
+    );
+
+    Route::post(
+        '/loans',
+        [MobileLoanController::class, 'store']
+    );
+
+    Route::get(
+        '/loans/{loan}',
+        [MobileLoanController::class, 'show']
+    );
+
+    Route::post(
+        '/loans/{loan}/repay',
+        [MobileLoanController::class, 'repay']
+    );
 
 });
