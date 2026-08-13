@@ -39,7 +39,6 @@ class DashboardController extends Controller
         */
 
         if ($groups->isEmpty()) {
-
             return response()->json([
                 'has_group' => false,
 
@@ -96,12 +95,20 @@ class DashboardController extends Controller
             | CONTRIBUTION CHART
             |--------------------------------------------------------------------------
             |
-            | Groups contributions by actual DATE.
+            | Get paid contributions from the previous 2 months.
+            |
+            | Contributions made on the same date are combined into
+            | one data point.
             |
             */
 
+            $chartStartDate = now()
+                ->subMonths(2)
+                ->startOfDay();
+
             $contributionChart = $group->contributions()
                 ->where('status', 'paid')
+                ->where('created_at', '>=', $chartStartDate)
                 ->selectRaw("
                     DATE(created_at) as contribution_date,
                     SUM(amount) as total
@@ -142,9 +149,7 @@ class DashboardController extends Controller
             */
 
             $totalLoaned = $allLoans->sum(function ($loan) {
-
                 return (float) $loan->amount;
-
             });
 
             /*
@@ -154,12 +159,10 @@ class DashboardController extends Controller
             */
 
             $totalPayable = $allLoans->sum(function ($loan) {
-
                 return (float) (
                     $loan->total_payable
                     ?? $loan->amount
                 );
-
             });
 
             /*
@@ -183,9 +186,7 @@ class DashboardController extends Controller
 
                 return $loan->repayments->sum(
                     function ($repayment) {
-
                         return (float) $repayment->amount;
-
                     }
                 );
 
@@ -262,33 +263,6 @@ class DashboardController extends Controller
                     max(0, $recoveryRate)
                 );
             }
-
-            /*
-            |--------------------------------------------------------------------------
-            | MONTHLY CONTRIBUTIONS
-            |--------------------------------------------------------------------------
-            */
-
-            $contributionChart = $group->contributions()
-    ->where('status', 'paid')
-    ->where(
-        'created_at',
-        '>=',
-        now()->subMonths(2)->startOfDay()
-    )
-    ->orderBy('created_at')
-    ->get()
-    ->map(function ($contribution) {
-
-        return [
-            'date' => $contribution->created_at->format('Y-m-d'),
-            'amount' => (float) $contribution->amount,
-        ];
-
-    })
-    ->values();
-
-
 
             /*
             |--------------------------------------------------------------------------
@@ -401,17 +375,7 @@ class DashboardController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | MONTHLY CONTRIBUTIONS
-                |--------------------------------------------------------------------------
-                */
-
-                'monthly_contributions' =>
-
-                    'contribution_chart' => $contributionChart,
-
-                /*
-                |--------------------------------------------------------------------------
-                | CONTRIBUTION DATE CHART
+                | CONTRIBUTION CHART
                 |--------------------------------------------------------------------------
                 */
 
@@ -425,8 +389,7 @@ class DashboardController extends Controller
                 */
 
                 'recent_activity' =>
-                    $recentContributions
-                        ->values(),
+                    $recentContributions->values(),
             ];
         });
 
@@ -452,8 +415,20 @@ class DashboardController extends Controller
                     $user->email,
             ],
 
+            /*
+            |--------------------------------------------------------------------------
+            | ALL GROUPS
+            |--------------------------------------------------------------------------
+            */
+
             'groups' =>
                 $groupData->values(),
+
+            /*
+            |--------------------------------------------------------------------------
+            | GROUP COUNT
+            |--------------------------------------------------------------------------
+            */
 
             'groups_count' =>
                 $groupData->count(),
