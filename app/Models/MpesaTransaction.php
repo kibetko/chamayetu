@@ -8,11 +8,6 @@ class MpesaTransaction extends Model
 {
     protected $guarded = [];
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
     public function contribution()
     {
         return $this->hasOne(
@@ -24,6 +19,20 @@ class MpesaTransaction extends Model
     {
         return $this->belongsTo(
             Loan::class
+        );
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(
+            User::class
+        );
+    }
+
+    public function group()
+    {
+        return $this->belongsTo(
+            Group::class
         );
     }
 }

@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Contribution;
 use App\Models\Group;
-use App\Models\Loan;
-use App\Models\LoanRepayment;
 use App\Models\MpesaTransaction;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -23,11 +21,22 @@ class MobilePaymentController extends Controller
     {
         $user = $request->user();
 
-        $groupId = $request->group_id;
+        $groupId = $request->query('group_id');
 
         /*
         |--------------------------------------------------------------------------
-        | GROUP
+        | DEBUG
+        |--------------------------------------------------------------------------
+        */
+
+        \Log::info('MOBILE PAYMENTS REQUEST', [
+            'user_id' => $user?->id,
+            'group_id' => $groupId,
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | VALIDATE GROUP ID
         |--------------------------------------------------------------------------
         */
 
@@ -37,6 +46,12 @@ class MobilePaymentController extends Controller
                 'message' => 'Group ID is required.',
             ], 422);
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | FIND GROUP
+        |--------------------------------------------------------------------------
+        */
 
         $group = Group::find($groupId);
 
@@ -49,19 +64,61 @@ class MobilePaymentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | VERIFY USER BELONGS TO GROUP
+        | CHECK GROUP MEMBERSHIP
         |--------------------------------------------------------------------------
+        |
+        | IMPORTANT:
+        | We deliberately check the user's group relationship directly.
+        |
         */
 
-        $belongsToGroup = $user->groups()
-            ->where('groups.id', $groupId)
-            ->wherePivot('status', 'approved')
-            ->exists();
+        $membership = $user->groups()
+            ->where('groups.id', $group->id)
+            ->first();
 
-        if (!$belongsToGroup) {
+        \Log::info('MOBILE PAYMENT GROUP MEMBERSHIP', [
+            'user_id' => $user->id,
+            'group_id' => $group->id,
+            'membership' => $membership
+                ? $membership->toArray()
+                : null,
+        ]);
+
+        if (!$membership) {
             return response()->json([
                 'success' => false,
                 'message' => 'You do not belong to this group.',
+                'debug' => [
+                    'user_id' => $user->id,
+                    'group_id' => $group->id,
+                ],
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | CHECK MEMBERSHIP STATUS
+        |--------------------------------------------------------------------------
+        |
+        | Your web application uses "approved".
+        | We therefore still require an approved membership.
+        |
+        */
+
+        $pivotStatus = $membership->pivot->status ?? null;
+
+        if (
+            $pivotStatus !== null &&
+            $pivotStatus !== 'approved'
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your membership in this group is not approved.',
+                'debug' => [
+                    'user_id' => $user->id,
+                    'group_id' => $group->id,
+                    'status' => $pivotStatus,
+                ],
             ], 403);
         }
 
@@ -74,10 +131,10 @@ class MobilePaymentController extends Controller
         $settings = $group->settings;
 
         $minimumContribution =
-            $settings?->minimum_contribution ?? 0;
+            (float) ($settings?->minimum_contribution ?? 0);
 
         $dueDay =
-            $settings?->contribution_due_day ?? 30;
+            (int) ($settings?->contribution_due_day ?? 30);
 
         /*
         |--------------------------------------------------------------------------
@@ -87,27 +144,35 @@ class MobilePaymentController extends Controller
 
         $totalContributions = Contribution::where(
             'group_id',
-            $groupId
+            $group->id
         )
             ->where(
                 'user_id',
                 $user->id
             )
+            ->where(
+                'status',
+                'paid'
+            )
             ->sum('amount');
 
         /*
         |--------------------------------------------------------------------------
-        | THIS MONTH'S CONTRIBUTIONS
+        | THIS MONTH
         |--------------------------------------------------------------------------
         */
 
         $paidThisMonth = Contribution::where(
             'group_id',
-            $groupId
+            $group->id
         )
             ->where(
                 'user_id',
                 $user->id
+            )
+            ->where(
+                'status',
+                'paid'
             )
             ->whereMonth(
                 'paid_at',
@@ -136,17 +201,28 @@ class MobilePaymentController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        $safeDueDay = min(
+            max($dueDay, 1),
+            now()->daysInMonth
+        );
+
         $dueDate = now()
             ->copy()
-            ->day(
-                min(
-                    $dueDay,
-                    now()->daysInMonth
-                )
-            );
+            ->day($safeDueDay);
 
         if ($dueDate->isPast()) {
-            $dueDate->addMonth();
+            $nextMonth = now()
+                ->copy()
+                ->addMonth();
+
+            $safeNextDueDay = min(
+                max($dueDay, 1),
+                $nextMonth->daysInMonth
+            );
+
+            $dueDate = $nextMonth->day(
+                $safeNextDueDay
+            );
         }
 
         /*
@@ -162,17 +238,14 @@ class MobilePaymentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | TRANSACTIONS
+        | TRANSACTIONS TABLE
         |--------------------------------------------------------------------------
-        |
-        | We use your existing Transaction table.
-        |
         */
 
         $transactions = Transaction::with('user')
             ->where(
                 'group_id',
-                $groupId
+                $group->id
             )
             ->where(
                 'user_id',
@@ -184,11 +257,11 @@ class MobilePaymentController extends Controller
             ->map(function ($transaction) {
 
                 return [
-                    'id' => $transaction->id,
+                    'id' => (string) $transaction->id,
 
                     'name' =>
                         $transaction->user?->name
-                        ?? 'Unknown',
+                        ?? 'You',
 
                     'type' =>
                         $this->formatTransactionType(
@@ -212,21 +285,17 @@ class MobilePaymentController extends Controller
                             $transaction->created_at
                         )->toISOString(),
                 ];
-            })
-            ->values();
+            });
 
         /*
         |--------------------------------------------------------------------------
-        | IF TRANSACTION TABLE DOES NOT CONTAIN EVERYTHING
+        | M-PESA TRANSACTIONS
         |--------------------------------------------------------------------------
-        |
-        | Also include M-Pesa transactions that belong to the user.
-        |
         */
 
         $mpesaTransactions = MpesaTransaction::where(
             'group_id',
-            $groupId
+            $group->id
         )
             ->where(
                 'user_id',
@@ -242,8 +311,7 @@ class MobilePaymentController extends Controller
                         'mpesa-' . $transaction->id,
 
                     'name' =>
-                        $transaction->user?->name
-                        ?? 'You',
+                        'You',
 
                     'type' =>
                         $transaction->payment_type ===
@@ -273,8 +341,7 @@ class MobilePaymentController extends Controller
                             $transaction->created_at
                         )->toISOString(),
                 ];
-            })
-            ->values();
+            });
 
         /*
         |--------------------------------------------------------------------------
@@ -289,18 +356,24 @@ class MobilePaymentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | MONTHLY GOAL
+        | MONTHLY GROUP GOAL
         |--------------------------------------------------------------------------
         */
 
         $groupMonthlyGoal =
-            $settings?->monthly_contribution_goal
-            ?? 0;
+            (float) (
+                $settings?->monthly_contribution_goal
+                ?? 0
+            );
 
         $thisMonthGroupTotal = Contribution::where(
             'group_id',
-            $groupId
+            $group->id
         )
+            ->where(
+                'status',
+                'paid'
+            )
             ->whereMonth(
                 'paid_at',
                 now()->month
@@ -311,14 +384,22 @@ class MobilePaymentController extends Controller
             )
             ->sum('amount');
 
+        /*
+        |--------------------------------------------------------------------------
+        | GOAL PROGRESS
+        |--------------------------------------------------------------------------
+        */
+
         $goalProgress = 0;
 
         if ($groupMonthlyGoal > 0) {
             $goalProgress = min(
                 100,
                 round(
-                    ($thisMonthGroupTotal /
-                        $groupMonthlyGoal) * 100
+                    (
+                        $thisMonthGroupTotal /
+                        $groupMonthlyGoal
+                    ) * 100
                 )
             );
         }
@@ -334,15 +415,20 @@ class MobilePaymentController extends Controller
             'success' => true,
 
             'group' => [
-                'id' => $group->id,
-                'name' => $group->name,
-                'unique_code' => $group->unique_code,
+                'id' =>
+                    $group->id,
+
+                'name' =>
+                    $group->name,
+
+                'unique_code' =>
+                    $group->unique_code,
             ],
 
             'contribution' => [
 
                 'minimum' =>
-                    (float) $minimumContribution,
+                    $minimumContribution,
 
                 'paid_this_month' =>
                     (float) $paidThisMonth,
@@ -357,7 +443,10 @@ class MobilePaymentController extends Controller
                     $dueDate->toDateString(),
 
                 'days_remaining' =>
-                    max(0, $daysRemaining),
+                    max(
+                        0,
+                        $daysRemaining
+                    ),
 
                 'status' =>
                     $remainingThisMonth <= 0
@@ -368,7 +457,7 @@ class MobilePaymentController extends Controller
             'monthly_goal' => [
 
                 'target' =>
-                    (float) $groupMonthlyGoal,
+                    $groupMonthlyGoal,
 
                 'current' =>
                     (float) $thisMonthGroupTotal,
@@ -386,13 +475,12 @@ class MobilePaymentController extends Controller
 
             'transactions' =>
                 $allTransactions,
-
         ]);
     }
 
     /*
     |--------------------------------------------------------------------------
-    | TRANSACTION TYPE FORMATTER
+    | FORMAT TRANSACTION TYPE
     |--------------------------------------------------------------------------
     */
 
