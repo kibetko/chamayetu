@@ -48,58 +48,91 @@ Route::post(
 
 Route::middleware('auth:sanctum')->group(function () {
 
-   Route::middleware('auth:sanctum')->group(function(){
+    /*
+    |--------------------------------------------------------------------------
+    | AUTH
+    |--------------------------------------------------------------------------
+    */
 
     Route::post(
         '/logout',
-        [MobileAuthController::class,'logout']
+        [MobileAuthController::class, 'logout']
     );
 
     Route::get(
         '/user',
-        [MobileAuthController::class,'user']
+        [MobileAuthController::class, 'user']
     );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | DASHBOARD
+    |--------------------------------------------------------------------------
+    */
 
     Route::get(
         '/dashboard',
-        [DashboardController::class,'index']
+        [DashboardController::class, 'index']
     );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | MEMBERS
+    |--------------------------------------------------------------------------
+    */
 
     Route::get(
         '/members',
-        [MemberController::class,'index']
+        [MemberController::class, 'index']
     )->name('api.members.index');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | LOANS
+    |--------------------------------------------------------------------------
+    */
 
     Route::get(
         '/loans',
-        [MobileLoanController::class,'index']
+        [MobileLoanController::class, 'index']
     );
 
     Route::post(
         '/loans',
-        [MobileLoanController::class,'store']
+        [MobileLoanController::class, 'store']
     );
 
     Route::get(
         '/loans/{loan}',
-        [MobileLoanController::class,'show']
+        [MobileLoanController::class, 'show']
     );
 
     Route::post(
         '/loans/{loan}/repay',
-        [MobileLoanController::class,'repay']
+        [MobileLoanController::class, 'repay']
     );
+
 
     /*
     |--------------------------------------------------------------------------
-    | MOBILE PAYMENTS
+    | PAYMENTS
     |--------------------------------------------------------------------------
     */
 
     Route::get(
         '/payments',
-        [MobilePaymentController::class,'index']
+        [MobilePaymentController::class, 'index']
     );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | GROUP SETTINGS
+    |--------------------------------------------------------------------------
+    */
 
     Route::get(
         '/group-settings',
@@ -115,5 +148,5 @@ Route::middleware('auth:sanctum')->group(function () {
         '/group-settings/leadership',
         [GroupSettingsController::class, 'updateLeadership']
     )->name('api.group-settings.leadership');
-});
+
 });

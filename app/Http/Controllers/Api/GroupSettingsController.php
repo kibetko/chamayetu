@@ -10,13 +10,38 @@ use Illuminate\Http\Request;
 class GroupSettingsController extends Controller
 {
     /**
-     * Get settings for the currently active group.
+     * Get settings for the currently selected group.
      *
      * GET /api/group-settings?group_id=2
+     *
+     * Everyone in the group can access this endpoint.
+     *
+     * Permissions determine what React Native should display:
+     *
+     * Member:
+     * - My Account
+     * - Profile
+     *
+     * Secretary / Treasurer:
+     * - My Account
+     * - Profile
+     * - Group Management
+     *
+     * Chairperson:
+     * - My Account
+     * - Profile
+     * - Group Settings
+     * - Group Management
      */
     public function index(Request $request)
     {
         $user = $request->user();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Get group ID
+        |--------------------------------------------------------------------------
+        */
 
         $groupId = $request->query('group_id');
 
@@ -68,13 +93,14 @@ class GroupSettingsController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        if (!in_array($membership->status, ['active', 'approved'], true)) {
+        if (!in_array(
+            $membership->status,
+            ['active', 'approved'],
+            true
+        )) {
             return response()->json([
                 'success' => false,
                 'message' => 'Your membership in this group is not active.',
-                'debug' => [
-                    'status' => $membership->status,
-                ],
             ], 403);
         }
 
@@ -106,6 +132,7 @@ class GroupSettingsController extends Controller
 
         $leadership = $group->members
             ->filter(function ($member) {
+
                 return in_array(
                     $member->pivot->role,
                     [
@@ -113,6 +140,12 @@ class GroupSettingsController extends Controller
                         'secretary',
                         'treasurer',
                     ],
+                    true
+                )
+                &&
+                in_array(
+                    $member->pivot->status ?? 'active',
+                    ['active', 'approved'],
                     true
                 );
             })
@@ -138,28 +171,75 @@ class GroupSettingsController extends Controller
 
             'success' => true,
 
+            /*
+            |--------------------------------------------------------------------------
+            | Group
+            |--------------------------------------------------------------------------
+            */
+
             'group' => [
+
                 'id' => $group->id,
+
                 'name' => $group->name,
+
                 'description' => $group->description,
+
                 'unique_code' => $group->unique_code,
+
             ],
 
+            /*
+            |--------------------------------------------------------------------------
+            | Current user's membership
+            |--------------------------------------------------------------------------
+            */
+
             'my_membership' => [
+
                 'user_id' => $user->id,
+
                 'role' => $role,
+
                 'status' => $membership->status,
 
                 'is_chairperson' => $isChairperson,
 
                 'is_committee' => $isCommittee,
+
             ],
 
+            /*
+            |--------------------------------------------------------------------------
+            | Permissions
+            |--------------------------------------------------------------------------
+            |
+            | React Native uses these values to decide which
+            | settings/management tabs should be visible.
+            |
+            */
+
             'permissions' => [
+
+                /*
+                | Everyone can view their own account/profile.
+                */
+
+                'view_my_account' => true,
+
+                'view_profile' => true,
+
+                /*
+                | Group settings are chairperson-only.
+                */
 
                 'view_settings' => $isChairperson,
 
                 'edit_settings' => $isChairperson,
+
+                /*
+                | Committee access.
+                */
 
                 'view_group_management' => $isCommittee,
 
@@ -169,8 +249,21 @@ class GroupSettingsController extends Controller
 
                 'manage_invitations' => $isCommittee,
 
+                /*
+                | Leadership remains chairperson-only.
+                */
+
+                'view_leadership' => $isCommittee,
+
                 'manage_leadership' => $isChairperson,
+
             ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Group financial settings
+            |--------------------------------------------------------------------------
+            */
 
             'settings' => [
 
@@ -197,7 +290,14 @@ class GroupSettingsController extends Controller
 
                 'maximum_loan_multiplier' =>
                     $group->settings?->maximum_loan_multiplier,
+
             ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Current leadership
+            |--------------------------------------------------------------------------
+            */
 
             'leadership' => $leadership,
 
@@ -206,9 +306,9 @@ class GroupSettingsController extends Controller
 
 
     /**
-     * Update group settings.
+     * Update group financial settings.
      *
-     * Only the chairperson can do this.
+     * Only the chairperson can update these settings.
      *
      * PUT /api/group-settings
      */
@@ -216,48 +316,9 @@ class GroupSettingsController extends Controller
     {
         $user = $request->user();
 
-        $groupId = $request->input('group_id');
-
-        if (!$groupId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Group ID is required.',
-            ], 422);
-        }
-
         /*
         |--------------------------------------------------------------------------
-        | Find membership
-        |--------------------------------------------------------------------------
-        */
-
-        $membership = GroupMember::where('group_id', $groupId)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (!$membership) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are not a member of this group.',
-            ], 403);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Chairperson only
-        |--------------------------------------------------------------------------
-        */
-
-        if ($membership->role !== 'chairperson') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only the chairperson can update group settings.',
-            ], 403);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Validate
+        | Validate request
         |--------------------------------------------------------------------------
         */
 
@@ -316,15 +377,71 @@ class GroupSettingsController extends Controller
                 'numeric',
                 'min:1',
             ],
+
         ]);
+
+        $groupId = $validated['group_id'];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Check membership
+        |--------------------------------------------------------------------------
+        */
+
+        $membership = GroupMember::where('group_id', $groupId)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$membership) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not a member of this group.',
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Check active membership
+        |--------------------------------------------------------------------------
+        */
+
+        if (!in_array(
+            $membership->status,
+            ['active', 'approved'],
+            true
+        )) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your membership in this group is not active.',
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Chairperson only
+        |--------------------------------------------------------------------------
+        */
+
+        if ($membership->role !== 'chairperson') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only the chairperson can update group settings.',
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Find group
+        |--------------------------------------------------------------------------
+        */
+
+        $group = Group::findOrFail($groupId);
 
         /*
         |--------------------------------------------------------------------------
         | Update settings
         |--------------------------------------------------------------------------
         */
-
-        $group = Group::findOrFail($groupId);
 
         $settings = $group->settings()->updateOrCreate(
 
@@ -362,6 +479,12 @@ class GroupSettingsController extends Controller
             ]
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
+
         return response()->json([
 
             'success' => true,
@@ -394,15 +517,17 @@ class GroupSettingsController extends Controller
 
                 'maximum_loan_multiplier' =>
                     $settings->maximum_loan_multiplier,
+
             ],
+
         ]);
     }
 
 
     /**
-     * Update leadership roles.
+     * Update group leadership.
      *
-     * Only the chairperson can change leadership.
+     * Only the current chairperson can change leadership.
      *
      * PUT /api/group-settings/leadership
      */
@@ -410,43 +535,9 @@ class GroupSettingsController extends Controller
     {
         $user = $request->user();
 
-        $groupId = $request->input('group_id');
-
-        if (!$groupId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Group ID is required.',
-            ], 422);
-        }
-
         /*
         |--------------------------------------------------------------------------
-        | Check chairperson
-        |--------------------------------------------------------------------------
-        */
-
-        $membership = GroupMember::where('group_id', $groupId)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (!$membership) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are not a member of this group.',
-            ], 403);
-        }
-
-        if ($membership->role !== 'chairperson') {
-            return response()->json([
-                'success' => false,
-                'message' =>
-                    'Only the chairperson can manage leadership roles.',
-            ], 403);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Validate
+        | Validate request
         |--------------------------------------------------------------------------
         */
 
@@ -475,35 +566,78 @@ class GroupSettingsController extends Controller
                 'integer',
                 'exists:users,id',
             ],
+
         ]);
+
+        $groupId = $validated['group_id'];
 
         /*
         |--------------------------------------------------------------------------
-        | Make sure selected users belong to group
+        | Check current user's membership
         |--------------------------------------------------------------------------
         */
 
-        $selectedUsers = array_filter([
-            $validated['chairperson_id'],
-            $validated['secretary_id'] ?? null,
-            $validated['treasurer_id'] ?? null,
-        ]);
+        $membership = GroupMember::where('group_id', $groupId)
+            ->where('user_id', $user->id)
+            ->first();
 
-        $memberCount = GroupMember::where('group_id', $groupId)
-            ->whereIn('user_id', $selectedUsers)
-            ->count();
-
-        if ($memberCount !== count($selectedUsers)) {
+        if (!$membership) {
             return response()->json([
                 'success' => false,
-                'message' =>
-                    'All leadership members must belong to this group.',
-            ], 422);
+                'message' => 'You are not a member of this group.',
+            ], 403);
         }
 
         /*
         |--------------------------------------------------------------------------
-        | Prevent duplicate roles
+        | Check active membership
+        |--------------------------------------------------------------------------
+        */
+
+        if (!in_array(
+            $membership->status,
+            ['active', 'approved'],
+            true
+        )) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your membership in this group is not active.',
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Chairperson only
+        |--------------------------------------------------------------------------
+        */
+
+        if ($membership->role !== 'chairperson') {
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'Only the chairperson can manage leadership roles.',
+            ], 403);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Collect selected leadership users
+        |--------------------------------------------------------------------------
+        */
+
+        $selectedUsers = array_filter([
+
+            $validated['chairperson_id'],
+
+            $validated['secretary_id'] ?? null,
+
+            $validated['treasurer_id'] ?? null,
+
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prevent duplicate people holding multiple roles
         |--------------------------------------------------------------------------
         */
 
@@ -520,31 +654,78 @@ class GroupSettingsController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Reset current leadership
+        | Make sure all selected users are active group members
+        |--------------------------------------------------------------------------
+        */
+
+        $validMemberCount = GroupMember::where(
+                'group_id',
+                $groupId
+            )
+            ->whereIn(
+                'user_id',
+                $selectedUsers
+            )
+            ->whereIn(
+                'status',
+                ['active', 'approved']
+            )
+            ->count();
+
+        if (
+            $validMemberCount !==
+            count($selectedUsers)
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'All leadership members must be active members of this group.',
+            ], 422);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Reset existing leadership
         |--------------------------------------------------------------------------
         */
 
         GroupMember::where('group_id', $groupId)
-            ->whereIn('role', [
-                'chairperson',
-                'secretary',
-                'treasurer',
-            ])
+            ->whereIn(
+                'role',
+                [
+                    'chairperson',
+                    'secretary',
+                    'treasurer',
+                ]
+            )
             ->update([
                 'role' => 'member',
             ]);
 
         /*
         |--------------------------------------------------------------------------
-        | Assign new roles
+        | Assign chairperson
         |--------------------------------------------------------------------------
         */
 
         GroupMember::where('group_id', $groupId)
-            ->where('user_id', $validated['chairperson_id'])
+            ->where(
+                'user_id',
+                $validated['chairperson_id']
+            )
+            ->whereIn(
+                'status',
+                ['active', 'approved']
+            )
             ->update([
                 'role' => 'chairperson',
             ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Assign secretary
+        |--------------------------------------------------------------------------
+        */
 
         if (!empty($validated['secretary_id'])) {
 
@@ -553,10 +734,20 @@ class GroupSettingsController extends Controller
                     'user_id',
                     $validated['secretary_id']
                 )
+                ->whereIn(
+                    'status',
+                    ['active', 'approved']
+                )
                 ->update([
                     'role' => 'secretary',
                 ]);
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Assign treasurer
+        |--------------------------------------------------------------------------
+        */
 
         if (!empty($validated['treasurer_id'])) {
 
@@ -565,10 +756,64 @@ class GroupSettingsController extends Controller
                     'user_id',
                     $validated['treasurer_id']
                 )
+                ->whereIn(
+                    'status',
+                    ['active', 'approved']
+                )
                 ->update([
                     'role' => 'treasurer',
                 ]);
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Get updated leadership
+        |--------------------------------------------------------------------------
+        */
+
+        $leadership = GroupMember::with('user')
+            ->where('group_id', $groupId)
+            ->whereIn(
+                'role',
+                [
+                    'chairperson',
+                    'secretary',
+                    'treasurer',
+                ]
+            )
+            ->whereIn(
+                'status',
+                ['active', 'approved']
+            )
+            ->get()
+            ->map(function ($member) {
+
+                return [
+
+                    'user_id' =>
+                        $member->user_id,
+
+                    'name' =>
+                        $member->user?->name,
+
+                    'email' =>
+                        $member->user?->email,
+
+                    'phone_no' =>
+                        $member->user?->phone_no,
+
+                    'role' =>
+                        $member->role,
+
+                ];
+            })
+            ->values();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
 
         return response()->json([
 
@@ -576,6 +821,10 @@ class GroupSettingsController extends Controller
 
             'message' =>
                 'Leadership roles updated successfully.',
+
+            'leadership' =>
+                $leadership,
+
         ]);
     }
 }
