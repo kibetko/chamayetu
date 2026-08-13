@@ -3,7 +3,7 @@
 use App\Http\Controllers\MpesaController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\MobileAuthController;
-
+use App\Http\Controllers\Api\DashboardController;
 
 Route::post(
     '/login',
@@ -29,5 +29,10 @@ Route::middleware('auth:sanctum')->group(function(){
         '/user',
         [MobileAuthController::class,'user']
     );
+
+    Route::get('/dashboard', [
+        DashboardController::class,
+        'index'
+    ]);
 
 });
