@@ -149,4 +149,19 @@ Route::middleware('auth:sanctum')->group(function () {
         [GroupSettingsController::class, 'updateLeadership']
     )->name('api.group-settings.leadership');
 
+    Route::get(
+    '/notifications',
+    [NotificationController::class, 'index']
+);
+
+Route::patch(
+    '/notifications/{notification}/read',
+    [NotificationController::class, 'markAsRead']
+);
+
+Route::post(
+    '/notifications/read-all',
+    [NotificationController::class, 'markAllAsRead']
+);
+
 });
