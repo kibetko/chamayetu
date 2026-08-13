@@ -4,6 +4,7 @@ use App\Http\Controllers\MpesaController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\MemberController;
 
 Route::post(
     '/login',
