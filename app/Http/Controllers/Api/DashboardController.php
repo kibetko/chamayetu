@@ -269,32 +269,318 @@ class DashboardController extends Controller
             | RECENT ACTIVITY
             |--------------------------------------------------------------------------
             */
+/*
+|--------------------------------------------------------------------------
+| RECENT ACTIVITY
+|--------------------------------------------------------------------------
+|
+| Combine contributions, loans and repayments into one activity feed.
+|
+*/
 
-            $recentContributions = $group->contributions()
-                ->where('status', 'paid')
-                ->with('user')
-                ->latest()
-                ->take(5)
-                ->get()
-                ->map(function ($contribution) {
+$activities = collect();
 
-                    return [
-                        'type' => 'contribution',
+/*
+|--------------------------------------------------------------------------
+| CONTRIBUTIONS
+|--------------------------------------------------------------------------
+*/
 
-                        'title' =>
-                            'Contribution Received',
+$contributionActivities = $group->contributions()
+    ->where('status', 'paid')
+    ->with('user')
+    ->latest()
+    ->get()
+    ->map(function ($contribution) {
 
-                        'amount' =>
-                            (float) $contribution->amount,
+        return [
+            'type' => 'contribution',
 
-                        'user' =>
-                            $contribution->user?->name,
+            'title' => 'Contribution Received',
 
-                        'created_at' =>
-                            $contribution->created_at,
-                    ];
+            'description' =>
+                ($contribution->user?->name ?? 'A member')
+                . ' made a contribution',
 
-                });
+            'amount' =>
+                (float) $contribution->amount,
+
+            'user' =>
+                $contribution->user?->name,
+
+            'created_at' =>
+                $contribution->created_at,
+        ];
+
+    });
+
+$activities = $activities->merge($contributionActivities);
+
+
+/*
+|--------------------------------------------------------------------------
+| LOANS
+|--------------------------------------------------------------------------
+*/
+
+$loanActivities = Loan::where('group_id', $group->id)
+    ->with([
+        'user',
+        'repayments',
+    ])
+    ->get()
+    ->flatMap(function ($loan) {
+
+        $loanActivities = collect();
+
+        $userName = $loan->user?->name ?? 'A member';
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOAN APPLICATION
+        |--------------------------------------------------------------------------
+        */
+
+        $loanActivities->push([
+
+            'type' => 'loan_applied',
+
+            'title' => 'Loan Application',
+
+            'description' =>
+                $userName . ' applied for a loan',
+
+            'amount' =>
+                (float) $loan->amount,
+
+            'user' =>
+                $userName,
+
+            'created_at' =>
+                $loan->created_at,
+
+        ]);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOAN APPROVED
+        |--------------------------------------------------------------------------
+        |
+        | Only add this if the loan actually has an approval timestamp.
+        |
+        */
+
+        if (!empty($loan->approved_at)) {
+
+            $loanActivities->push([
+
+                'type' => 'loan_approved',
+
+                'title' => 'Loan Approved',
+
+                'description' =>
+                    $userName . '\'s loan was approved',
+
+                'amount' =>
+                    (float) $loan->amount,
+
+                'user' =>
+                    $userName,
+
+                'created_at' =>
+                    $loan->approved_at,
+
+            ]);
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOAN DISBURSED
+        |--------------------------------------------------------------------------
+        */
+
+        if (!empty($loan->disbursed_at)) {
+
+            $loanActivities->push([
+
+                'type' => 'loan_disbursed',
+
+                'title' => 'Loan Disbursed',
+
+                'description' =>
+                    'Loan disbursed to ' . $userName,
+
+                'amount' =>
+                    (float) $loan->amount,
+
+                'user' =>
+                    $userName,
+
+                'created_at' =>
+                    $loan->disbursed_at,
+
+            ]);
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOAN REJECTED
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $loan->status === 'rejected' &&
+            !empty($loan->updated_at)
+        ) {
+
+            $loanActivities->push([
+
+                'type' => 'loan_rejected',
+
+                'title' => 'Loan Rejected',
+
+                'description' =>
+                    $userName . '\'s loan was rejected',
+
+                'amount' =>
+                    (float) $loan->amount,
+
+                'user' =>
+                    $userName,
+
+                'created_at' =>
+                    $loan->updated_at,
+
+            ]);
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOAN OVERDUE
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $loan->status === 'overdue' &&
+            !empty($loan->updated_at)
+        ) {
+
+            $loanActivities->push([
+
+                'type' => 'loan_overdue',
+
+                'title' => 'Loan Overdue',
+
+                'description' =>
+                    $userName . '\'s loan is overdue',
+
+                'amount' =>
+                    (float) $loan->amount,
+
+                'user' =>
+                    $userName,
+
+                'created_at' =>
+                    $loan->updated_at,
+
+            ]);
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOAN COMPLETED
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $loan->status === 'completed' &&
+            !empty($loan->updated_at)
+        ) {
+
+            $loanActivities->push([
+
+                'type' => 'loan_completed',
+
+                'title' => 'Loan Completed',
+
+                'description' =>
+                    $userName . '\'s loan was completed',
+
+                'amount' =>
+                    (float) $loan->amount,
+
+                'user' =>
+                    $userName,
+
+                'created_at' =>
+                    $loan->updated_at,
+
+            ]);
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | REPAYMENTS
+        |--------------------------------------------------------------------------
+        */
+
+        foreach ($loan->repayments as $repayment) {
+
+            $loanActivities->push([
+
+                'type' => 'loan_repayment',
+
+                'title' => 'Loan Repayment',
+
+                'description' =>
+                    $userName . ' made a loan repayment',
+
+                'amount' =>
+                    (float) $repayment->amount,
+
+                'user' =>
+                    $userName,
+
+                'created_at' =>
+                    $repayment->created_at,
+
+            ]);
+
+        }
+
+
+        return $loanActivities;
+
+    });
+
+$activities = $activities->merge($loanActivities);
+
+
+/*
+|--------------------------------------------------------------------------
+| SORT ALL ACTIVITIES
+|--------------------------------------------------------------------------
+*/
+
+$recentActivities = $activities
+    ->sortByDesc(function ($activity) {
+
+        return $activity['created_at'];
+
+    })
+    ->take(10)
+    ->values();
 
            
                 /*
@@ -390,7 +676,7 @@ class DashboardController extends Controller
                 */
 
                 'recent_activity' =>
-                    $recentContributions->values(),
+    $recentActivities,
             ];
         });
 
