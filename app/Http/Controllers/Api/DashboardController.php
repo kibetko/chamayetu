@@ -20,216 +20,374 @@ class DashboardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+        | LOAD ALL USER GROUPS
+        |--------------------------------------------------------------------------
+        |
+        | IMPORTANT:
+        | We deliberately DO NOT use ->first().
+        |
+        | The user can belong to multiple groups.
+        |
+        */
+
+        $groups = $user->groups()
+            ->with([
+                'members',
+                'settings',
+            ])
+            ->wherePivot('status', 'active')
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
         | CHECK GROUP MEMBERSHIP
         |--------------------------------------------------------------------------
         */
 
-        if ($user->groups()->count() === 0) {
+        if ($groups->isEmpty()) {
+
             return response()->json([
-                'message' => 'You are not a member of any group.',
                 'has_group' => false,
+
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ],
+
+                'groups' => [],
+
+                'message' => 'You are not a member of any group.',
             ], 200);
         }
 
         /*
         |--------------------------------------------------------------------------
-        | ACTIVE GROUP
-        |--------------------------------------------------------------------------
-        |
-        | Mobile does not use Laravel session().
-        |
-        | For now we use the first group.
-        | Later we can add group switching.
-        |
-        */
-
-        $group = $user->groups()
-            ->with([
-                'members',
-                'contributions',
-                'loans',
-                'settings',
-            ])
-            ->first();
-
-        /*
-        |--------------------------------------------------------------------------
-        | GENERAL STATISTICS
+        | BUILD DASHBOARD FOR EACH GROUP
         |--------------------------------------------------------------------------
         */
 
-        $totalContributions = $group->contributions()
-            ->where('status', 'paid')
-            ->sum('amount');
+        $groupData = $groups->map(function ($group) use ($user) {
 
-        $myContributions = $group->contributions()
-            ->where('user_id', $user->id)
-            ->where('status', 'paid')
-            ->sum('amount');
+            /*
+            |--------------------------------------------------------------------------
+            | MEMBER INFORMATION
+            |--------------------------------------------------------------------------
+            */
 
-        /*
-        |--------------------------------------------------------------------------
-        | LOANS
-        |--------------------------------------------------------------------------
-        */
+            $membership = $group->members
+                ->firstWhere('id', $user->id);
 
-        $allLoans = Loan::where('group_id', $group->id)
-            ->whereIn('status', [
-                'approved',
-                'disbursed',
-                'overdue',
-                'completed'
-            ])
-            ->with('repayments')
-            ->get();
+            $role = $membership?->pivot?->role;
 
-        /*
-        |--------------------------------------------------------------------------
-        | LOAN STATISTICS
-        |--------------------------------------------------------------------------
-        */
+            /*
+            |--------------------------------------------------------------------------
+            | CONTRIBUTIONS
+            |--------------------------------------------------------------------------
+            */
 
-        $totalLoaned = $allLoans->sum(function ($loan) {
-            return (float) $loan->amount;
-        });
+            $totalContributions = $group->contributions()
+                ->where('status', 'paid')
+                ->sum('amount');
 
-        $totalPayable = $allLoans->sum(function ($loan) {
-            return (float) (
-                $loan->total_payable
-                ?? $loan->amount
-            );
-        });
+            $myContributions = $group->contributions()
+                ->where('user_id', $user->id)
+                ->where('status', 'paid')
+                ->sum('amount');
 
-        $totalInterest = max(
-            0,
-            $totalPayable - $totalLoaned
-        );
+            /*
+            |--------------------------------------------------------------------------
+            | LOANS
+            |--------------------------------------------------------------------------
+            */
 
-        $totalRepaid = $allLoans->sum(function ($loan) {
+            $allLoans = Loan::where('group_id', $group->id)
+                ->whereIn('status', [
+                    'approved',
+                    'disbursed',
+                    'overdue',
+                    'completed',
+                ])
+                ->with('repayments')
+                ->get();
 
-            return $loan->repayments->sum(function ($repayment) {
-                return (float) $repayment->amount;
+            /*
+            |--------------------------------------------------------------------------
+            | TOTAL LOANED
+            |--------------------------------------------------------------------------
+            */
+
+            $totalLoaned = $allLoans->sum(function ($loan) {
+
+                return (float) $loan->amount;
+
             });
 
-        });
+            /*
+            |--------------------------------------------------------------------------
+            | TOTAL PAYABLE
+            |--------------------------------------------------------------------------
+            */
 
-        $outstanding = max(
-            0,
-            $totalPayable - $totalRepaid
-        );
+            $totalPayable = $allLoans->sum(function ($loan) {
 
-        /*
-        |--------------------------------------------------------------------------
-        | LOAN COUNTS
-        |--------------------------------------------------------------------------
-        */
-
-        $activeLoans = $allLoans
-            ->whereIn('status', [
-                'approved',
-                'disbursed',
-                'overdue'
-            ])
-            ->count();
-
-        $completedLoans = $allLoans
-            ->where('status', 'completed')
-            ->count();
-
-        $overdueLoans = $allLoans
-            ->where('status', 'overdue')
-            ->count();
-
-        /*
-        |--------------------------------------------------------------------------
-        | AVAILABLE FUNDS
-        |--------------------------------------------------------------------------
-        |
-        | Keeping the same calculation currently used
-        | by your web dashboard.
-        |
-        */
-
-        $interestEarned = max(
-            0,
-            $totalRepaid - $totalLoaned
-        );
-
-        $totalAvailable =
-            $totalContributions + $interestEarned;
-
-        /*
-        |--------------------------------------------------------------------------
-        | RECOVERY RATE
-        |--------------------------------------------------------------------------
-        */
-
-        $recoveryRate = 0;
-
-        if ($totalPayable > 0) {
-
-            $recoveryRate =
-                ($totalRepaid / $totalPayable) * 100;
-
-            $recoveryRate = min(
-                100,
-                max(0, $recoveryRate)
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | MONTHLY CONTRIBUTIONS
-        |--------------------------------------------------------------------------
-        */
-
-        $monthlyContributions = $group->contributions()
-            ->where('status', 'paid')
-            ->selectRaw("
-                TO_CHAR(
-                    DATE_TRUNC('month', created_at),
-                    'Mon YYYY'
-                ) as month,
-
-                DATE_TRUNC(
-                    'month',
-                    created_at
-                ) as month_date,
-
-                SUM(amount) as total
-            ")
-            ->groupByRaw("
-                DATE_TRUNC(
-                    'month',
-                    created_at
-                )
-            ")
-            ->orderBy('month_date')
-            ->get();
-
-        /*
-        |--------------------------------------------------------------------------
-        | RECENT CONTRIBUTIONS
-        |--------------------------------------------------------------------------
-        */
-
-        $recentContributions = $group->contributions()
-            ->where('status', 'paid')
-            ->with('user')
-            ->latest()
-            ->take(5)
-            ->get()
-            ->map(function ($contribution) {
-
-                return [
-                    'type' => 'contribution',
-                    'title' => 'Contribution Received',
-                    'amount' => (float) $contribution->amount,
-                    'user' => $contribution->user?->name,
-                    'created_at' => $contribution->created_at,
-                ];
+                return (float) (
+                    $loan->total_payable
+                    ?? $loan->amount
+                );
 
             });
+
+            /*
+            |--------------------------------------------------------------------------
+            | INTEREST
+            |--------------------------------------------------------------------------
+            */
+
+            $totalInterest = max(
+                0,
+                $totalPayable - $totalLoaned
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | TOTAL REPAYMENTS
+            |--------------------------------------------------------------------------
+            */
+
+            $totalRepaid = $allLoans->sum(function ($loan) {
+
+                return $loan->repayments->sum(
+                    function ($repayment) {
+
+                        return (float) $repayment->amount;
+
+                    }
+                );
+
+            });
+
+            /*
+            |--------------------------------------------------------------------------
+            | OUTSTANDING
+            |--------------------------------------------------------------------------
+            */
+
+            $outstanding = max(
+                0,
+                $totalPayable - $totalRepaid
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | LOAN COUNTS
+            |--------------------------------------------------------------------------
+            */
+
+            $activeLoans = $allLoans
+                ->whereIn('status', [
+                    'approved',
+                    'disbursed',
+                    'overdue',
+                ])
+                ->count();
+
+            $completedLoans = $allLoans
+                ->where('status', 'completed')
+                ->count();
+
+            $overdueLoans = $allLoans
+                ->where('status', 'overdue')
+                ->count();
+
+            /*
+            |--------------------------------------------------------------------------
+            | INTEREST EARNED
+            |--------------------------------------------------------------------------
+            */
+
+            $interestEarned = max(
+                0,
+                $totalRepaid - $totalLoaned
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | AVAILABLE FUNDS
+            |--------------------------------------------------------------------------
+            */
+
+            $totalAvailable =
+                $totalContributions + $interestEarned;
+
+            /*
+            |--------------------------------------------------------------------------
+            | RECOVERY RATE
+            |--------------------------------------------------------------------------
+            */
+
+            $recoveryRate = 0;
+
+            if ($totalPayable > 0) {
+
+                $recoveryRate =
+                    ($totalRepaid / $totalPayable) * 100;
+
+                $recoveryRate = min(
+                    100,
+                    max(0, $recoveryRate)
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | MONTHLY CONTRIBUTIONS
+            |--------------------------------------------------------------------------
+            */
+
+            $monthlyContributions = $group->contributions()
+                ->where('status', 'paid')
+                ->selectRaw("
+                    TO_CHAR(
+                        DATE_TRUNC('month', created_at),
+                        'Mon YYYY'
+                    ) as month,
+
+                    DATE_TRUNC(
+                        'month',
+                        created_at
+                    ) as month_date,
+
+                    SUM(amount) as total
+                ")
+                ->groupByRaw("
+                    DATE_TRUNC(
+                        'month',
+                        created_at
+                    )
+                ")
+                ->orderBy('month_date')
+                ->get();
+
+            /*
+            |--------------------------------------------------------------------------
+            | RECENT ACTIVITY
+            |--------------------------------------------------------------------------
+            */
+
+            $recentContributions = $group->contributions()
+                ->where('status', 'paid')
+                ->with('user')
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(function ($contribution) {
+
+                    return [
+                        'type' => 'contribution',
+
+                        'title' =>
+                            'Contribution Received',
+
+                        'amount' =>
+                            (float) $contribution->amount,
+
+                        'user' =>
+                            $contribution->user?->name,
+
+                        'created_at' =>
+                            $contribution->created_at,
+                    ];
+
+                });
+
+            /*
+            |--------------------------------------------------------------------------
+            | RETURN GROUP DATA
+            |--------------------------------------------------------------------------
+            */
+
+            return [
+
+                'id' =>
+                    $group->id,
+
+                'name' =>
+                    $group->name,
+
+                'unique_code' =>
+                    $group->unique_code,
+
+                'role' =>
+                    $role,
+
+                'members' =>
+                    $group->members->count(),
+
+                'summary' => [
+
+                    'total_contributions' =>
+                        (float) $totalContributions,
+
+                    'my_contributions' =>
+                        (float) $myContributions,
+
+                    'total_available' =>
+                        (float) $totalAvailable,
+
+                    'total_loaned' =>
+                        (float) $totalLoaned,
+
+                    'total_repaid' =>
+                        (float) $totalRepaid,
+
+                    'total_payable' =>
+                        (float) $totalPayable,
+
+                    'total_interest' =>
+                        (float) $totalInterest,
+
+                    'outstanding' =>
+                        (float) $outstanding,
+                ],
+
+                'loans' => [
+
+                    'active' =>
+                        $activeLoans,
+
+                    'completed' =>
+                        $completedLoans,
+
+                    'overdue' =>
+                        $overdueLoans,
+
+                    'recovery_rate' =>
+                        round($recoveryRate, 2),
+                ],
+
+                'monthly_contributions' =>
+                    $monthlyContributions
+                        ->map(function ($item) {
+
+                            return [
+
+                                'month' =>
+                                    $item->month,
+
+                                'total' =>
+                                    (float) $item->total,
+
+                            ];
+
+                        })
+                        ->values(),
+
+                'recent_activity' =>
+                    $recentContributions
+                        ->values(),
+            ];
+        });
 
         /*
         |--------------------------------------------------------------------------
@@ -241,111 +399,35 @@ class DashboardController extends Controller
 
             'has_group' => true,
 
-            /*
-            |--------------------------------------------------------------------------
-            | USER
-            |--------------------------------------------------------------------------
-            */
-
             'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
+
+                'id' =>
+                    $user->id,
+
+                'name' =>
+                    $user->name,
+
+                'email' =>
+                    $user->email,
             ],
 
             /*
             |--------------------------------------------------------------------------
-            | GROUP
+            | ALL GROUPS
             |--------------------------------------------------------------------------
             */
 
-            'group' => [
-                'id' => $group->id,
-                'name' => $group->name,
-                'unique_code' => $group->unique_code,
-                'members' => $group->members->count(),
-            ],
+            'groups' =>
+                $groupData->values(),
 
             /*
             |--------------------------------------------------------------------------
-            | SUMMARY
+            | GROUP COUNT
             |--------------------------------------------------------------------------
             */
 
-            'summary' => [
-
-                'total_contributions' =>
-                    (float) $totalContributions,
-
-                'my_contributions' =>
-                    (float) $myContributions,
-
-                'total_available' =>
-                    (float) $totalAvailable,
-
-                'total_loaned' =>
-                    (float) $totalLoaned,
-
-                'total_repaid' =>
-                    (float) $totalRepaid,
-
-                'total_payable' =>
-                    (float) $totalPayable,
-
-                'total_interest' =>
-                    (float) $totalInterest,
-
-                'outstanding' =>
-                    (float) $outstanding,
-
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | LOANS
-            |--------------------------------------------------------------------------
-            */
-
-            'loans' => [
-
-                'active' =>
-                    $activeLoans,
-
-                'completed' =>
-                    $completedLoans,
-
-                'overdue' =>
-                    $overdueLoans,
-
-                'recovery_rate' =>
-                    round($recoveryRate, 2),
-
-            ],
-
-            /*
-            |--------------------------------------------------------------------------
-            | MONTHLY CONTRIBUTIONS
-            |--------------------------------------------------------------------------
-            */
-
-            'monthly_contributions' =>
-                $monthlyContributions->map(function ($item) {
-
-                    return [
-                        'month' => $item->month,
-                        'total' => (float) $item->total,
-                    ];
-
-                })->values(),
-
-            /*
-            |--------------------------------------------------------------------------
-            | RECENT ACTIVITY
-            |--------------------------------------------------------------------------
-            */
-
-            'recent_activity' =>
-                $recentContributions->values(),
+            'groups_count' =>
+                $groupData->count(),
 
         ]);
     }
