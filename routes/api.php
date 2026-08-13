@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\MobileLoanController;
 use App\Http\Controllers\Api\MobilePaymentController;
+use App\Http\Controllers\Api\GroupSettingsController;
 
 
 /*
@@ -99,5 +100,20 @@ Route::middleware('auth:sanctum')->group(function () {
         '/payments',
         [MobilePaymentController::class,'index']
     );
+
+    Route::get(
+        '/group-settings',
+        [GroupSettingsController::class, 'index']
+    )->name('api.group-settings.index');
+
+    Route::put(
+        '/group-settings',
+        [GroupSettingsController::class, 'update']
+    )->name('api.group-settings.update');
+
+    Route::put(
+        '/group-settings/leadership',
+        [GroupSettingsController::class, 'updateLeadership']
+    )->name('api.group-settings.leadership');
 });
 });
