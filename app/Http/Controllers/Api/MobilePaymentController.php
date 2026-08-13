@@ -73,27 +73,44 @@ class MobilePaymentController extends Controller
         */
 
         $membership = $user->groups()
-            ->where('groups.id', $group->id)
-            ->first();
+    ->where('groups.id', $groupId)
+    ->first();
 
-        \Log::info('MOBILE PAYMENT GROUP MEMBERSHIP', [
+if (!$membership) {
+    return response()->json([
+        'success' => false,
+        'message' => 'You do not belong to this group.',
+        'debug' => [
             'user_id' => $user->id,
-            'group_id' => $group->id,
-            'membership' => $membership
-                ? $membership->toArray()
-                : null,
-        ]);
+            'group_id' => (int) $groupId,
+            'status' => null,
+        ],
+    ], 403);
+}
 
-        if (!$membership) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You do not belong to this group.',
-                'debug' => [
-                    'user_id' => $user->id,
-                    'group_id' => $group->id,
-                ],
-            ], 403);
-        }
+$membershipStatus = $membership->pivot->status ?? null;
+
+/*
+|--------------------------------------------------------------------------
+| MOBILE MEMBERSHIP CHECK
+|--------------------------------------------------------------------------
+|
+| Your existing system currently uses "active" for this member.
+| We therefore allow both active and approved memberships.
+|
+*/
+
+if (!in_array($membershipStatus, ['active', 'approved'], true)) {
+    return response()->json([
+        'success' => false,
+        'message' => 'Your membership in this group is not approved.',
+        'debug' => [
+            'user_id' => $user->id,
+            'group_id' => (int) $groupId,
+            'status' => $membershipStatus,
+        ],
+    ], 403);
+}
 
         /*
         |--------------------------------------------------------------------------
