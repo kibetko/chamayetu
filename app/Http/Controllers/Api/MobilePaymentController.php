@@ -8,6 +8,7 @@ use App\Models\Group;
 use App\Models\MpesaTransaction;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MobilePaymentController extends Controller
 {
@@ -29,7 +30,7 @@ class MobilePaymentController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        \Log::info('MOBILE PAYMENTS REQUEST', [
+        Log::info('MOBILE PAYMENTS REQUEST', [
             'user_id' => $user?->id,
             'group_id' => $groupId,
         ]);
@@ -67,74 +68,70 @@ class MobilePaymentController extends Controller
         | CHECK GROUP MEMBERSHIP
         |--------------------------------------------------------------------------
         |
-        | IMPORTANT:
         | We deliberately check the user's group relationship directly.
+        |
+        | Your existing system may use either:
+        |
+        | active
+        | approved
+        |
+        | The mobile API accepts both.
         |
         */
 
         $membership = $user->groups()
-    ->where('groups.id', $groupId)
-    ->first();
+            ->where('groups.id', $groupId)
+            ->first();
 
-if (!$membership) {
-    return response()->json([
-        'success' => false,
-        'message' => 'You do not belong to this group.',
-        'debug' => [
-            'user_id' => $user->id,
-            'group_id' => (int) $groupId,
-            'status' => null,
-        ],
-    ], 403);
-}
+        if (!$membership) {
+            Log::warning('MOBILE PAYMENTS MEMBERSHIP NOT FOUND', [
+                'user_id' => $user->id,
+                'group_id' => $groupId,
+            ]);
 
-$membershipStatus = $membership->pivot->status ?? null;
-
-/*
-|--------------------------------------------------------------------------
-| MOBILE MEMBERSHIP CHECK
-|--------------------------------------------------------------------------
-|
-| Your existing system currently uses "active" for this member.
-| We therefore allow both active and approved memberships.
-|
-*/
-
-if (!in_array($membershipStatus, ['active', 'approved'], true)) {
-    return response()->json([
-        'success' => false,
-        'message' => 'Your membership in this group is not approved.',
-        'debug' => [
-            'user_id' => $user->id,
-            'group_id' => (int) $groupId,
-            'status' => $membershipStatus,
-        ],
-    ], 403);
-}
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not belong to this group.',
+                'debug' => [
+                    'user_id' => $user->id,
+                    'group_id' => (int) $groupId,
+                    'status' => null,
+                ],
+            ], 403);
+        }
 
         /*
         |--------------------------------------------------------------------------
-        | CHECK MEMBERSHIP STATUS
+        | MEMBERSHIP STATUS
         |--------------------------------------------------------------------------
-        |
-        | Your web application uses "approved".
-        | We therefore still require an approved membership.
-        |
         */
 
-        $pivotStatus = $membership->pivot->status ?? null;
+        $membershipStatus = $membership->pivot->status ?? null;
 
-        if (
-            $pivotStatus !== null &&
-            $pivotStatus !== 'approved'
-        ) {
+        Log::info('MOBILE PAYMENTS MEMBERSHIP', [
+            'user_id' => $user->id,
+            'group_id' => $groupId,
+            'status' => $membershipStatus,
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | ACCEPT ACTIVE OR APPROVED
+        |--------------------------------------------------------------------------
+        */
+
+        if (!in_array(
+            $membershipStatus,
+            ['active', 'approved'],
+            true
+        )) {
             return response()->json([
                 'success' => false,
-                'message' => 'Your membership in this group is not approved.',
+                'message' => 'Your membership in this group is not active.',
                 'debug' => [
                     'user_id' => $user->id,
-                    'group_id' => $group->id,
-                    'status' => $pivotStatus,
+                    'group_id' => (int) $groupId,
+                    'status' => $membershipStatus,
                 ],
             ], 403);
         }
@@ -148,14 +145,18 @@ if (!in_array($membershipStatus, ['active', 'approved'], true)) {
         $settings = $group->settings;
 
         $minimumContribution =
-            (float) ($settings?->minimum_contribution ?? 0);
+            (float) (
+                $settings?->minimum_contribution ?? 0
+            );
 
         $dueDay =
-            (int) ($settings?->contribution_due_day ?? 30);
+            (int) (
+                $settings?->contribution_due_day ?? 30
+            );
 
         /*
         |--------------------------------------------------------------------------
-        | USER CONTRIBUTIONS
+        | USER TOTAL CONTRIBUTIONS
         |--------------------------------------------------------------------------
         */
 
@@ -175,7 +176,7 @@ if (!in_array($membershipStatus, ['active', 'approved'], true)) {
 
         /*
         |--------------------------------------------------------------------------
-        | THIS MONTH
+        | THIS MONTH'S CONTRIBUTIONS
         |--------------------------------------------------------------------------
         */
 
@@ -227,7 +228,14 @@ if (!in_array($membershipStatus, ['active', 'approved'], true)) {
             ->copy()
             ->day($safeDueDay);
 
+        /*
+        |--------------------------------------------------------------------------
+        | IF THIS MONTH'S DUE DATE HAS PASSED
+        |--------------------------------------------------------------------------
+        */
+
         if ($dueDate->isPast()) {
+
             $nextMonth = now()
                 ->copy()
                 ->addMonth();
@@ -257,6 +265,9 @@ if (!in_array($membershipStatus, ['active', 'approved'], true)) {
         |--------------------------------------------------------------------------
         | TRANSACTIONS TABLE
         |--------------------------------------------------------------------------
+        |
+        | Uses your existing transactions table.
+        |
         */
 
         $transactions = Transaction::with('user')
@@ -383,6 +394,12 @@ if (!in_array($membershipStatus, ['active', 'approved'], true)) {
                 ?? 0
             );
 
+        /*
+        |--------------------------------------------------------------------------
+        | THIS MONTH GROUP CONTRIBUTIONS
+        |--------------------------------------------------------------------------
+        */
+
         $thisMonthGroupTotal = Contribution::where(
             'group_id',
             $group->id
@@ -410,6 +427,7 @@ if (!in_array($membershipStatus, ['active', 'approved'], true)) {
         $goalProgress = 0;
 
         if ($groupMonthlyGoal > 0) {
+
             $goalProgress = min(
                 100,
                 round(
@@ -431,7 +449,14 @@ if (!in_array($membershipStatus, ['active', 'approved'], true)) {
 
             'success' => true,
 
+            /*
+            |--------------------------------------------------------------------------
+            | GROUP
+            |--------------------------------------------------------------------------
+            */
+
             'group' => [
+
                 'id' =>
                     $group->id,
 
@@ -441,6 +466,12 @@ if (!in_array($membershipStatus, ['active', 'approved'], true)) {
                 'unique_code' =>
                     $group->unique_code,
             ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | CONTRIBUTION
+            |--------------------------------------------------------------------------
+            */
 
             'contribution' => [
 
@@ -471,6 +502,12 @@ if (!in_array($membershipStatus, ['active', 'approved'], true)) {
                         : 'Pending',
             ],
 
+            /*
+            |--------------------------------------------------------------------------
+            | MONTHLY GROUP GOAL
+            |--------------------------------------------------------------------------
+            */
+
             'monthly_goal' => [
 
                 'target' =>
@@ -489,6 +526,12 @@ if (!in_array($membershipStatus, ['active', 'approved'], true)) {
                         $thisMonthGroupTotal
                     ),
             ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | TRANSACTIONS
+            |--------------------------------------------------------------------------
+            */
 
             'transactions' =>
                 $allTransactions,
