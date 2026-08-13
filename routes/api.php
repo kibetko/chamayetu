@@ -35,4 +35,9 @@ Route::middleware('auth:sanctum')->group(function(){
         'index'
     ]);
 
+    Route::get(
+        '/members',
+        [MemberController::class, 'index']
+    )->name('api.members.index');
+
 });
