@@ -5,76 +5,151 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\Loan;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 class MemberController extends Controller
 {
     /**
-     * Get members for the authenticated user's active group.
+     * Get members of the authenticated user's active group.
      */
     public function index(Request $request)
     {
+        /*
+        |--------------------------------------------------------------------------
+        | AUTHENTICATED USER
+        |--------------------------------------------------------------------------
+        */
+
         $user = $request->user();
 
         /*
         |--------------------------------------------------------------------------
-        | GET GROUP
+        | GET ACTIVE GROUP
+        |--------------------------------------------------------------------------
+        |
+        | First try the group sent by the mobile app.
+        | If none is supplied, use the user's first active group.
+        |
+        */
+
+        $groupId = $request->input('group_id');
+
+        if ($groupId) {
+
+            $group = $user->groups()
+                ->wherePivot('status', 'active')
+                ->where('groups.id', $groupId)
+                ->with('settings')
+                ->first();
+
+        } else {
+
+            $group = $user->groups()
+                ->wherePivot('status', 'active')
+                ->with('settings')
+                ->first();
+
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | NO GROUP
         |--------------------------------------------------------------------------
         */
 
-        $groupId = $request->query('group_id');
-
-        if ($groupId) {
-            $group = $user->groups()
-                ->where('groups.id', $groupId)
-                ->wherePivot('status', 'active')
-                ->first();
-        } else {
-            $group = $user->groups()
-                ->wherePivot('status', 'active')
-                ->first();
-        }
-
         if (!$group) {
+
             return response()->json([
                 'success' => false,
-                'message' => 'You are not a member of this group.',
+
+                'message' => 'You are not a member of any active group.',
+
                 'members' => [],
+
                 'stats' => [
                     'total_members' => 0,
                     'officials' => 0,
                     'online' => 0,
                     'total_savings' => 0,
                 ],
-            ], 404);
+            ], 200);
         }
 
         /*
         |--------------------------------------------------------------------------
-        | MEMBERS
+        | GET ALL GROUP MEMBERS
         |--------------------------------------------------------------------------
         */
 
         $members = $group->members()
             ->wherePivot('status', 'active')
-            ->get()
-            ->sortBy(function ($member) {
+            ->orderByRaw("
+                CASE
+                    WHEN group_members.role = 'chairperson' THEN 1
+                    WHEN group_members.role = 'secretary' THEN 2
+                    WHEN group_members.role = 'treasurer' THEN 3
+                    ELSE 4
+                END
+            ")
+            ->orderBy('users.name')
+            ->get();
 
-                return match ($member->pivot->role) {
+        /*
+        |--------------------------------------------------------------------------
+        | MEMBER IDS
+        |--------------------------------------------------------------------------
+        */
 
-                    'chairperson' => 1,
+        $memberIds = $members
+            ->pluck('id')
+            ->values();
 
-                    'secretary' => 2,
+        /*
+        |--------------------------------------------------------------------------
+        | ONLINE MEMBERS
+        |--------------------------------------------------------------------------
+        */
 
-                    'treasurer' => 3,
+        $onlineMembers = $memberIds
+            ->filter(function ($id) {
 
-                    default => 4,
-
-                };
+                return cache()->has(
+                    'online-user-' . $id
+                );
 
             })
             ->values();
+
+        /*
+        |--------------------------------------------------------------------------
+        | TOTAL SAVINGS
+        |--------------------------------------------------------------------------
+        */
+
+        $totalSavings = $group->contributions()
+            ->where('status', 'paid')
+            ->sum('amount');
+
+        /*
+        |--------------------------------------------------------------------------
+        | OFFICIALS
+        |--------------------------------------------------------------------------
+        */
+
+        $officials = $members
+            ->filter(function ($member) {
+
+                return in_array(
+                    strtolower($member->pivot->role ?? 'member'),
+                    [
+                        'chairperson',
+                        'secretary',
+                        'treasurer',
+                    ]
+                );
+
+            })
+            ->count();
 
         /*
         |--------------------------------------------------------------------------
@@ -82,158 +157,201 @@ class MemberController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $memberData = $members->map(function ($member) use ($group) {
+        $memberData = $members
+            ->map(function ($member) use ($group) {
 
-            /*
-            |--------------------------------------------------------------------------
-            | CONTRIBUTIONS
-            |--------------------------------------------------------------------------
-            */
+                /*
+                |--------------------------------------------------------------------------
+                | MEMBER CONTRIBUTIONS
+                |--------------------------------------------------------------------------
+                */
 
-            $contributed = $group->contributions()
-                ->where('user_id', $member->id)
-                ->where('status', 'paid')
-                ->sum('amount');
+                $contributed = $group->contributions()
+                    ->where('user_id', $member->id)
+                    ->where('status', 'paid')
+                    ->sum('amount');
 
-            /*
-            |--------------------------------------------------------------------------
-            | LOANS
-            |--------------------------------------------------------------------------
-            */
+                /*
+                |--------------------------------------------------------------------------
+                | MEMBER LOANS
+                |--------------------------------------------------------------------------
+                */
 
-            $loans = Loan::where('group_id', $group->id)
-                ->where('user_id', $member->id)
-                ->whereIn('status', [
-                    'approved',
-                    'disbursed',
-                    'overdue',
-                    'completed',
-                ])
-                ->with('repayments')
-                ->get();
+                $loans = Loan::where('group_id', $group->id)
+                    ->where('user_id', $member->id)
+                    ->whereIn('status', [
+                        'approved',
+                        'disbursed',
+                        'overdue',
+                        'completed',
+                    ])
+                    ->with('repayments')
+                    ->get();
 
-            /*
-            |--------------------------------------------------------------------------
-            | TOTAL BORROWED
-            |--------------------------------------------------------------------------
-            */
+                /*
+                |--------------------------------------------------------------------------
+                | TOTAL PAYABLE
+                |--------------------------------------------------------------------------
+                */
 
-            $loaned = $loans->sum(function ($loan) {
+                $totalPayable = $loans->sum(function ($loan) {
 
-                return (float) $loan->amount;
-
-            });
-
-            /*
-            |--------------------------------------------------------------------------
-            | TOTAL REPAYMENTS
-            |--------------------------------------------------------------------------
-            */
-
-            $repaid = $loans->sum(function ($loan) {
-
-                return $loan->repayments->sum(function ($repayment) {
-
-                    return (float) $repayment->amount;
+                    return (float) (
+                        $loan->total_payable
+                        ?? $loan->amount
+                    );
 
                 });
 
-            });
+                /*
+                |--------------------------------------------------------------------------
+                | TOTAL REPAID
+                |--------------------------------------------------------------------------
+                */
 
-            /*
-            |--------------------------------------------------------------------------
-            | OUTSTANDING
-            |--------------------------------------------------------------------------
-            */
+                $totalRepaid = $loans->sum(function ($loan) {
 
-            $totalPayable = $loans->sum(function ($loan) {
+                    return $loan->repayments->sum(
+                        function ($repayment) {
 
-                return (float) (
-                    $loan->total_payable
-                    ?? $loan->amount
+                            return (float) $repayment->amount;
+
+                        }
+                    );
+
+                });
+
+                /*
+                |--------------------------------------------------------------------------
+                | OUTSTANDING
+                |--------------------------------------------------------------------------
+                */
+
+                $outstanding = max(
+                    0,
+                    $totalPayable - $totalRepaid
                 );
 
-            });
+                /*
+                |--------------------------------------------------------------------------
+                | LOAN STATUS
+                |--------------------------------------------------------------------------
+                */
 
-            $outstanding = max(
-                0,
-                $totalPayable - $repaid
-            );
+                $hasOverdueLoan = $loans
+                    ->contains(function ($loan) {
 
-            /*
-            |--------------------------------------------------------------------------
-            | ONLINE
-            |--------------------------------------------------------------------------
-            */
+                        return $loan->status === 'overdue';
 
-            $online = cache()->has(
-                'online-user-' . $member->id
-            );
+                    });
 
-            /*
-            |--------------------------------------------------------------------------
-            | RETURN MEMBER
-            |--------------------------------------------------------------------------
-            */
+                /*
+                |--------------------------------------------------------------------------
+                | LAST CONTRIBUTION
+                |--------------------------------------------------------------------------
+                */
 
-            return [
+                $lastContribution = $group->contributions()
+                    ->where('user_id', $member->id)
+                    ->where('status', 'paid')
+                    ->latest()
+                    ->first();
 
-                'id' => $member->id,
+                /*
+                |--------------------------------------------------------------------------
+                | RETURN MEMBER
+                |--------------------------------------------------------------------------
+                */
 
-                'name' => $member->name,
+                return [
 
-                'email' => $member->email,
+                    'id' =>
+                        (string) $member->id,
 
-                'phone_no' => $member->phone_no,
+                    'name' =>
+                        $member->name,
 
-                'role' =>
-                    $member->pivot->role
-                    ?? 'member',
+                    'email' =>
+                        $member->email,
 
-                'joined_at' =>
-                    $member->pivot->joined_at,
+                    'phone_no' =>
+                        $member->phone_no,
 
-                'online' => $online,
+                    'role' =>
+                        ucfirst(
+                            $member->pivot->role ?? 'member'
+                        ),
 
-                'contributed' =>
-                    (float) $contributed,
+                    'status' =>
+                        $member->pivot->status ?? 'active',
 
-                'loaned' =>
-                    (float) $loaned,
+                    'joined_at' =>
+                        $member->pivot->joined_at,
 
-                'repaid' =>
-                    (float) $repaid,
+                    /*
+                    |--------------------------------------------------------------------------
+                    | ONLINE
+                    |--------------------------------------------------------------------------
+                    */
 
-                'outstanding' =>
-                    (float) $outstanding,
+                    'online' =>
+                        cache()->has(
+                            'online-user-' . $member->id
+                        ),
 
-            ];
+                    /*
+                    |--------------------------------------------------------------------------
+                    | CONTRIBUTIONS
+                    |--------------------------------------------------------------------------
+                    */
 
-        });
+                    'contributed' =>
+                        (float) $contributed,
 
-        /*
-        |--------------------------------------------------------------------------
-        | STATISTICS
-        |--------------------------------------------------------------------------
-        */
+                    /*
+                    |--------------------------------------------------------------------------
+                    | LOANS
+                    |--------------------------------------------------------------------------
+                    */
 
-        $totalMembers = $memberData->count();
+                    'loans' =>
+                        $loans->sum(function ($loan) {
 
-        $officials = $memberData
-            ->whereIn('role', [
-                'chairperson',
-                'secretary',
-                'treasurer',
-            ])
-            ->count();
+                            return (float) $loan->amount;
 
-        $onlineMembers = $memberData
-            ->where('online', true)
-            ->count();
+                        }),
 
-        $totalSavings = $memberData->sum(
-            'contributed'
-        );
+                    'loan_repaid' =>
+                        (float) $totalRepaid,
+
+                    'outstanding' =>
+                        (float) $outstanding,
+
+                    'loan_status' =>
+                        $hasOverdueLoan
+                            ? 'overdue'
+                            : (
+                                $outstanding > 0
+                                    ? 'active'
+                                    : 'none'
+                            ),
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | LAST PAYMENT
+                    |--------------------------------------------------------------------------
+                    */
+
+                    'last_payment' =>
+                        $lastContribution?->created_at,
+
+                    'last_payment_human' =>
+                        $lastContribution
+                            ? $lastContribution->created_at->diffForHumans()
+                            : null,
+                ];
+            })
+            ->values();
 
         /*
         |--------------------------------------------------------------------------
@@ -245,36 +363,56 @@ class MemberController extends Controller
 
             'success' => true,
 
+            /*
+            |--------------------------------------------------------------------------
+            | GROUP
+            |--------------------------------------------------------------------------
+            */
+
             'group' => [
 
-                'id' => $group->id,
+                'id' =>
+                    $group->id,
 
-                'name' => $group->name,
+                'name' =>
+                    $group->name,
 
                 'unique_code' =>
                     $group->unique_code,
 
             ],
 
+            /*
+            |--------------------------------------------------------------------------
+            | MEMBERS
+            |--------------------------------------------------------------------------
+            */
+
+            'members' =>
+                $memberData,
+
+            /*
+            |--------------------------------------------------------------------------
+            | STATISTICS
+            |--------------------------------------------------------------------------
+            */
+
             'stats' => [
 
                 'total_members' =>
-                    $totalMembers,
+                    $members->count(),
 
                 'officials' =>
                     $officials,
 
                 'online' =>
-                    $onlineMembers,
+                    $onlineMembers->count(),
 
                 'total_savings' =>
                     (float) $totalSavings,
 
             ],
 
-            'members' =>
-                $memberData,
-
-        ]);
+        ], 200);
     }
 }
