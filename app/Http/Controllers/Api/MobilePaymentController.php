@@ -65,63 +65,44 @@ class MobilePaymentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | CHECK GROUP MEMBERSHIP
+        | CHECK MEMBERSHIP
         |--------------------------------------------------------------------------
         |
-        | We deliberately check the user's group relationship directly.
-        |
-        | Your existing system may use either:
+        | Your database may use either:
         |
         | active
         | approved
         |
-        | The mobile API accepts both.
+        | Both are accepted for the mobile application.
         |
         */
 
         $membership = $user->groups()
-            ->where('groups.id', $groupId)
+            ->where('groups.id', $group->id)
             ->first();
 
         if (!$membership) {
-            Log::warning('MOBILE PAYMENTS MEMBERSHIP NOT FOUND', [
-                'user_id' => $user->id,
-                'group_id' => $groupId,
-            ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'You do not belong to this group.',
                 'debug' => [
                     'user_id' => $user->id,
-                    'group_id' => (int) $groupId,
+                    'group_id' => (int) $group->id,
                     'status' => null,
                 ],
             ], 403);
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | MEMBERSHIP STATUS
-        |--------------------------------------------------------------------------
-        */
-
         $membershipStatus = $membership->pivot->status ?? null;
 
-        Log::info('MOBILE PAYMENTS MEMBERSHIP', [
-            'user_id' => $user->id,
-            'group_id' => $groupId,
-            'status' => $membershipStatus,
-        ]);
-
         /*
         |--------------------------------------------------------------------------
-        | ACCEPT ACTIVE OR APPROVED
+        | ALLOW ACTIVE OR APPROVED
         |--------------------------------------------------------------------------
         */
 
         if (!in_array(
-            $membershipStatus,
+            strtolower((string) $membershipStatus),
             ['active', 'approved'],
             true
         )) {
@@ -130,7 +111,7 @@ class MobilePaymentController extends Controller
                 'message' => 'Your membership in this group is not active.',
                 'debug' => [
                     'user_id' => $user->id,
-                    'group_id' => (int) $groupId,
+                    'group_id' => (int) $group->id,
                     'status' => $membershipStatus,
                 ],
             ], 403);
@@ -156,8 +137,11 @@ class MobilePaymentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | USER TOTAL CONTRIBUTIONS
+        | CURRENT USER CONTRIBUTIONS
         |--------------------------------------------------------------------------
+        |
+        | These values are still personal to the logged-in member.
+        |
         */
 
         $totalContributions = Contribution::where(
@@ -176,7 +160,7 @@ class MobilePaymentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | THIS MONTH'S CONTRIBUTIONS
+        | CURRENT USER CONTRIBUTIONS THIS MONTH
         |--------------------------------------------------------------------------
         */
 
@@ -204,7 +188,7 @@ class MobilePaymentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | REMAINING CONTRIBUTION
+        | CURRENT USER REMAINING CONTRIBUTION
         |--------------------------------------------------------------------------
         */
 
@@ -228,14 +212,7 @@ class MobilePaymentController extends Controller
             ->copy()
             ->day($safeDueDay);
 
-        /*
-        |--------------------------------------------------------------------------
-        | IF THIS MONTH'S DUE DATE HAS PASSED
-        |--------------------------------------------------------------------------
-        */
-
         if ($dueDate->isPast()) {
-
             $nextMonth = now()
                 ->copy()
                 ->addMonth();
@@ -263,10 +240,60 @@ class MobilePaymentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | TRANSACTIONS TABLE
+        | GROUP TOTAL CONTRIBUTIONS
         |--------------------------------------------------------------------------
         |
-        | Uses your existing transactions table.
+        | IMPORTANT:
+        |
+        | This is the total contribution of EVERY MEMBER
+        | in the active group.
+        |
+        */
+
+        $groupTotalContributions = Contribution::where(
+            'group_id',
+            $group->id
+        )
+            ->where(
+                'status',
+                'paid'
+            )
+            ->sum('amount');
+
+        /*
+        |--------------------------------------------------------------------------
+        | GROUP CONTRIBUTIONS THIS MONTH
+        |--------------------------------------------------------------------------
+        */
+
+        $thisMonthGroupTotal = Contribution::where(
+            'group_id',
+            $group->id
+        )
+            ->where(
+                'status',
+                'paid'
+            )
+            ->whereMonth(
+                'paid_at',
+                now()->month
+            )
+            ->whereYear(
+                'paid_at',
+                now()->year
+            )
+            ->sum('amount');
+
+        /*
+        |--------------------------------------------------------------------------
+        | TRANSACTION TABLE
+        |--------------------------------------------------------------------------
+        |
+        | IMPORTANT:
+        |
+        | We DO NOT filter by user_id here.
+        |
+        | This means every member's transactions can appear.
         |
         */
 
@@ -275,21 +302,18 @@ class MobilePaymentController extends Controller
                 'group_id',
                 $group->id
             )
-            ->where(
-                'user_id',
-                $user->id
-            )
             ->orderByDesc('created_at')
-            ->limit(50)
+            ->limit(100)
             ->get()
             ->map(function ($transaction) {
 
                 return [
-                    'id' => (string) $transaction->id,
+                    'id' =>
+                        'transaction-' . $transaction->id,
 
                     'name' =>
                         $transaction->user?->name
-                        ?? 'You',
+                        ?? 'Unknown',
 
                     'type' =>
                         $this->formatTransactionType(
@@ -319,33 +343,59 @@ class MobilePaymentController extends Controller
         |--------------------------------------------------------------------------
         | M-PESA TRANSACTIONS
         |--------------------------------------------------------------------------
+        |
+        | IMPORTANT:
+        |
+        | Again, NO user_id filter.
+        |
+        | We show M-Pesa payments made by all members
+        | of the active group.
+        |
         */
 
-        $mpesaTransactions = MpesaTransaction::where(
-            'group_id',
-            $group->id
-        )
+        $mpesaTransactions = MpesaTransaction::with('user')
             ->where(
-                'user_id',
-                $user->id
+                'group_id',
+                $group->id
             )
             ->orderByDesc('created_at')
-            ->limit(50)
+            ->limit(100)
             ->get()
             ->map(function ($transaction) {
+
+                $paymentType =
+                    strtolower(
+                        (string) $transaction->payment_type
+                    );
+
+                if ($paymentType === 'loan_repayment') {
+                    $type = 'Loan Repayment';
+                    $description = 'Loan repayment';
+                } elseif ($paymentType === 'contribution') {
+                    $type = 'Contribution';
+                    $description = 'Group contribution';
+                } else {
+                    $type = ucwords(
+                        str_replace(
+                            '_',
+                            ' ',
+                            $paymentType ?: 'Payment'
+                        )
+                    );
+
+                    $description = 'Group payment';
+                }
 
                 return [
                     'id' =>
                         'mpesa-' . $transaction->id,
 
                     'name' =>
-                        'You',
+                        $transaction->user?->name
+                        ?? 'Unknown',
 
                     'type' =>
-                        $transaction->payment_type ===
-                        'loan_repayment'
-                            ? 'Loan Repayment'
-                            : 'Contribution',
+                        $type,
 
                     'amount' =>
                         (float) $transaction->amount,
@@ -354,14 +404,16 @@ class MobilePaymentController extends Controller
                         $transaction->receipt_number,
 
                     'description' =>
-                        $transaction->payment_type ===
-                        'loan_repayment'
-                            ? 'Loan repayment'
-                            : 'Group contribution',
+                        $description,
 
                     'status' =>
                         ucfirst(
-                            $transaction->status
+                            strtolower(
+                                (string) (
+                                    $transaction->status
+                                    ?? 'pending'
+                                )
+                            )
                         ),
 
                     'created_at' =>
@@ -373,12 +425,75 @@ class MobilePaymentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | COMBINE TRANSACTIONS
+        | ALSO INCLUDE CONTRIBUTIONS
+        |--------------------------------------------------------------------------
+        |
+        | This is useful because your Contribution table is where
+        | completed contribution payments are stored.
+        |
+        | This ensures that even if a payment does not have a
+        | Transaction record, it can still appear in the mobile
+        | payment history.
+        |
+        */
+
+        $contributionTransactions =
+            Contribution::with('user')
+                ->where(
+                    'group_id',
+                    $group->id
+                )
+                ->where(
+                    'status',
+                    'paid'
+                )
+                ->orderByDesc('paid_at')
+                ->limit(100)
+                ->get()
+                ->map(function ($contribution) {
+
+                    return [
+                        'id' =>
+                            'contribution-' .
+                            $contribution->id,
+
+                        'name' =>
+                            $contribution->user?->name
+                            ?? 'Unknown',
+
+                        'type' =>
+                            'Contribution',
+
+                        'amount' =>
+                            (float) $contribution->amount,
+
+                        'reference' =>
+                            $contribution
+                                ->mpesaTransaction
+                                ?->receipt_number,
+
+                        'description' =>
+                            'Group contribution',
+
+                        'status' =>
+                            'Success',
+
+                        'created_at' =>
+                            optional(
+                                $contribution->paid_at
+                            )->toISOString(),
+                    ];
+                });
+
+        /*
+        |--------------------------------------------------------------------------
+        | COMBINE ALL PAYMENT SOURCES
         |--------------------------------------------------------------------------
         */
 
         $allTransactions = $transactions
             ->concat($mpesaTransactions)
+            ->concat($contributionTransactions)
             ->sortByDesc('created_at')
             ->values();
 
@@ -396,30 +511,6 @@ class MobilePaymentController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | THIS MONTH GROUP CONTRIBUTIONS
-        |--------------------------------------------------------------------------
-        */
-
-        $thisMonthGroupTotal = Contribution::where(
-            'group_id',
-            $group->id
-        )
-            ->where(
-                'status',
-                'paid'
-            )
-            ->whereMonth(
-                'paid_at',
-                now()->month
-            )
-            ->whereYear(
-                'paid_at',
-                now()->year
-            )
-            ->sum('amount');
-
-        /*
-        |--------------------------------------------------------------------------
         | GOAL PROGRESS
         |--------------------------------------------------------------------------
         */
@@ -427,7 +518,6 @@ class MobilePaymentController extends Controller
         $goalProgress = 0;
 
         if ($groupMonthlyGoal > 0) {
-
             $goalProgress = min(
                 100,
                 round(
@@ -438,6 +528,18 @@ class MobilePaymentController extends Controller
                 )
             );
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | GROUP GOAL REMAINING
+        |--------------------------------------------------------------------------
+        */
+
+        $goalRemaining = max(
+            0,
+            $groupMonthlyGoal -
+            $thisMonthGroupTotal
+        );
 
         /*
         |--------------------------------------------------------------------------
@@ -465,11 +567,14 @@ class MobilePaymentController extends Controller
 
                 'unique_code' =>
                     $group->unique_code,
+
+                'membership_status' =>
+                    $membershipStatus,
             ],
 
             /*
             |--------------------------------------------------------------------------
-            | CONTRIBUTION
+            | PERSONAL CONTRIBUTION
             |--------------------------------------------------------------------------
             */
 
@@ -504,6 +609,21 @@ class MobilePaymentController extends Controller
 
             /*
             |--------------------------------------------------------------------------
+            | GROUP CONTRIBUTION SUMMARY
+            |--------------------------------------------------------------------------
+            */
+
+            'group_contributions' => [
+
+                'total' =>
+                    (float) $groupTotalContributions,
+
+                'this_month' =>
+                    (float) $thisMonthGroupTotal,
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
             | MONTHLY GROUP GOAL
             |--------------------------------------------------------------------------
             */
@@ -520,16 +640,12 @@ class MobilePaymentController extends Controller
                     (float) $goalProgress,
 
                 'remaining' =>
-                    max(
-                        0,
-                        $groupMonthlyGoal -
-                        $thisMonthGroupTotal
-                    ),
+                    (float) $goalRemaining,
             ],
 
             /*
             |--------------------------------------------------------------------------
-            | TRANSACTIONS
+            | GROUP TRANSACTION HISTORY
             |--------------------------------------------------------------------------
             */
 
